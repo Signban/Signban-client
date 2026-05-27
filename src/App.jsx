@@ -1,10 +1,11 @@
-import { Routes, Route } from "react-router";
+import { Navigate, Route, Routes } from "react-router";
 import { ToastContainer } from "react-toastify";
 import AuthLayout from "./layouts/AuthLayout";
-import MainLayout from "./layouts/mainlayout";
+import MainLayout from "./layouts/MainLayout";
 import LoginPage from "./pages/LoginPage";
 import BoardPage from "./pages/BoardPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import BoardDetailPage from "./pages/BoardDetail";
 
 function App() {
 	return (
@@ -15,10 +16,14 @@ function App() {
 				</Route>
 
 				<Route element={<MainLayout />}>
-					<Route path="/" element={<BoardPage />} />
+					<Route path="/" element={<Navigate to="/dashboard" replace />} />
+					<Route path="/dashboard" element={<BoardPage />} />
+					<Route path="/dashboard/detail" element={<BoardDetailPage />} />
 				</Route>
+
 				<Route path="*" element={<NotFoundPage />} />
 			</Routes>
+
 			<ToastContainer
 				position="bottom-left"
 				autoClose={2000}

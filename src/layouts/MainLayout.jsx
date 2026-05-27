@@ -1,21 +1,25 @@
-import { Navigate, Outlet } from "react-router";
+import { Navigate, Outlet, useLocation } from "react-router";
 import Navbar from "../components/navbar";
 import Footer from "../components/footer";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function MainLayout() {
-	if (!localStorage.getItem("access_token")) {
-		return <Navigate to="/login" />;
-	}
-	return (
-		<>
-			<div className="bg-base-200 flex flex-col min-h-screen">
-				<Navbar />
-				<main className="grow w-full">
-					<Outlet />
-				</main>
+	const location = useLocation();
+	const { isAuthenticated } = useAuth();
 
-				<Footer />
-			</div>
-		</>
+	if (!isAuthenticated) {
+		return <Navigate to="/login" replace state={{ from: location }} />;
+	}
+
+	return (
+		<div className="flex min-h-screen flex-col bg-base-200">
+			<Navbar />
+
+			<main className="grow">
+				<Outlet />
+			</main>
+
+			<Footer />
+		</div>
 	);
 }

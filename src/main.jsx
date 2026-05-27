@@ -1,28 +1,22 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { GoogleOAuthProvider } from "@react-oauth/google";
 import { BrowserRouter } from "react-router";
-// import { Provider } from "react-redux";
 import App from "./App.jsx";
-// import store from "./store";
+import { AuthProvider } from "./contexts/AuthContext.jsx";
+import { ModalProvider } from "./contexts/ModalContext.jsx";
+import { ThemeProvider } from "./contexts/ThemeContext.jsx";
 import "./index.css";
-
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 createRoot(document.getElementById("root")).render(
 	<StrictMode>
-		{/* <Provider store={store}> */}
-		{googleClientId ? (
-			<GoogleOAuthProvider clientId={googleClientId}>
-				<BrowserRouter>
-					<App />
-				</BrowserRouter>
-			</GoogleOAuthProvider>
-		) : (
-			<BrowserRouter>
-				<App />
-			</BrowserRouter>
-		)}
-		{/* </Provider> */}
+		<BrowserRouter>
+			<ThemeProvider>
+				<AuthProvider>
+					<ModalProvider>
+						<App />
+					</ModalProvider>
+				</AuthProvider>
+			</ThemeProvider>
+		</BrowserRouter>
 	</StrictMode>,
 );

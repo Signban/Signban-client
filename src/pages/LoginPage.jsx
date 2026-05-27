@@ -1,24 +1,19 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { toast } from "react-toastify";
-import { GoogleLogin } from "@react-oauth/google";
-import AuthService from "../services/AuthService";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function LoginPage() {
 	const navigate = useNavigate();
+	const location = useLocation();
+	const { login, loading } = useAuth();
 
 	const [form, setForm] = useState({
 		email: "",
 		password: "",
 	});
 
-	const [forgotForm, setForgotForm] = useState({
-		email: "",
-	});
-
-	const [loading, setLoading] = useState(false);
-	const [forgotLoading, setForgotLoading] = useState(false);
-	const [forgotModalOpen, setForgotModalOpen] = useState(false);
+	const redirectTo = location.state?.from?.pathname || "/dashboard";
 
 	const handleChange = (event) => {
 		const { name, value } = event.target;
@@ -29,98 +24,17 @@ export default function LoginPage() {
 		}));
 	};
 
-	const handleForgotChange = (event) => {
-		const { name, value } = event.target;
-
-		setForgotForm((prevForm) => ({
-			...prevForm,
-			[name]: value,
-		}));
-	};
-
-	const handleOpenForgotModal = () => {
-		setForgotForm({
-			email: form.email || "",
-		});
-
-		setForgotModalOpen(true);
-	};
-
-	const handleCloseForgotModal = () => {
-		if (forgotLoading) return;
-
-		setForgotModalOpen(false);
-	};
-
 	const handleSubmit = async (event) => {
 		event.preventDefault();
 
 		try {
-			setLoading(true);
-
-			const response = await AuthService.login(form);
-
-			localStorage.setItem("access_token", response.access_token);
-
-			toast.success("login success");
-			navigate("/dashboard", { replace: true });
+			await login(form);
+			toast.success("Login success");
+			navigate(redirectTo, { replace: true });
 		} catch (error) {
 			console.log(error);
-
 			const message = error.response?.data?.message || "Login failed";
 			toast.error(message);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleGoogleSuccess = async (credentialResponse) => {
-		try {
-			setLoading(true);
-
-			const response = await AuthService.googleLogin(
-				credentialResponse.credential,
-			);
-
-			localStorage.setItem("access_token", response.access_token);
-
-			toast.success("login with Google success");
-			navigate("/dashboard", { replace: true });
-		} catch (error) {
-			console.log(error);
-
-			const message = error.response?.data?.message || "Google login failed";
-			toast.error(message);
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleForgotPassword = async (event) => {
-		event.preventDefault();
-
-		if (!forgotForm.email.trim()) {
-			toast.error("Email is required");
-			return;
-		}
-
-		try {
-			setForgotLoading(true);
-
-			await AuthService.forgotPassword({
-				email: forgotForm.email.trim(),
-			});
-
-			toast.success("Reset password link has been sent to your email");
-			setForgotModalOpen(false);
-		} catch (error) {
-			console.log(error);
-
-			const message =
-				error.response?.data?.message || "Failed to send reset password link";
-			toast.error(message);
-		} finally {
-			setForgotLoading(false);
 		}
 	};
 
@@ -129,8 +43,8 @@ export default function LoginPage() {
 			<main className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
 				<section className="relative hidden overflow-hidden lg:flex">
 					<img
-						src="https://images.unsplash.com/photo-1521791136064-7986c2920216?q=80&w=1600&auto=format&fit=crop"
-						alt="Joburaku Career Assistant"
+						src="https://images.unsplash.com/photo-1611224923853-80b023f02d71?q=80&w=1600&auto=format&fit=crop"
+						alt="Signban realtime kanban board"
 						className="absolute inset-0 h-full w-full object-cover"
 					/>
 
@@ -139,32 +53,32 @@ export default function LoginPage() {
 					<div className="relative z-10 flex flex-col justify-end p-14 text-white">
 						<div className="max-w-lg">
 							<div className="badge badge-primary badge-lg mb-5 border-0 text-white">
-								Joburaku
+								Signban
 							</div>
 
 							<h1 className="mb-5 text-5xl font-bold leading-tight">
-								Asisten AI untuk perjalanan kariermu
+								Realtime Kanban untuk kerja tim yang lebih rapi
 							</h1>
 
 							<p className="text-lg leading-relaxed text-white/80">
-								Kelola lamaran kerja, buat CV ATS-friendly, dan siapkan jawaban
-								interview berdasarkan lowongan yang kamu lamar.
+								Kelola board, list, card, checklist, komentar, dan aktivitas tim
+								secara realtime dalam satu workspace.
 							</p>
 
 							<div className="mt-8 grid grid-cols-1 gap-3 text-sm text-white/90">
 								<div className="flex items-center gap-3">
 									<span className="badge badge-success badge-sm"></span>
-									<span>Tracking progress lamaran kerja</span>
+									<span>Board collaboration realtime</span>
 								</div>
 
 								<div className="flex items-center gap-3">
 									<span className="badge badge-warning badge-sm"></span>
-									<span>Generate CV sesuai job description</span>
+									<span>Drag & drop workflow</span>
 								</div>
 
 								<div className="flex items-center gap-3">
 									<span className="badge badge-info badge-sm"></span>
-									<span>Latihan interview dengan bantuan AI</span>
+									<span>AI checklist dan priority suggestion</span>
 								</div>
 							</div>
 						</div>
@@ -175,14 +89,14 @@ export default function LoginPage() {
 					<div className="w-full max-w-md">
 						<div className="mb-10">
 							<div className="mb-4 flex flex-wrap gap-2">
-								<span className="badge badge-primary">Joburaku</span>
-								<span className="badge badge-outline">Career Assistant</span>
+								<span className="badge badge-primary">Signban</span>
+								<span className="badge badge-outline">Realtime Kanban</span>
 							</div>
 
 							<h2 className="text-4xl font-bold text-base-content">Sign In</h2>
 
 							<p className="mt-3 text-base-content/60">
-								Please enter your email and password to continue
+								Masuk menggunakan akun yang sudah ada di database Signban.
 							</p>
 						</div>
 
@@ -221,16 +135,6 @@ export default function LoginPage() {
 										/>
 									</label>
 
-									<div className="flex items-center justify-end text-sm">
-										<button
-											type="button"
-											onClick={handleOpenForgotModal}
-											className="link link-primary"
-										>
-											Forgot password?
-										</button>
-									</div>
-
 									<button
 										type="submit"
 										disabled={loading}
@@ -244,113 +148,17 @@ export default function LoginPage() {
 									</button>
 								</form>
 
-								<div className="divider">OR</div>
-
-								<div className="flex justify-center">
-									<GoogleLogin
-										onSuccess={handleGoogleSuccess}
-										onError={() => toast.error("Google login failed")}
-										width="360"
-									/>
+								<div className="alert alert-info text-sm">
+									<span>
+										Untuk sekarang frontend hanya mengarah ke route API yang sudah ada:
+										 <strong>POST /login</strong>.
+									</span>
 								</div>
-
-								<p className="text-center text-sm text-base-content/70">
-									Don't have an account?{" "}
-									<Link
-										to="/register"
-										className="link link-primary font-semibold"
-									>
-										register
-									</Link>
-								</p>
 							</div>
 						</div>
 					</div>
 				</section>
 			</main>
-
-			{forgotModalOpen ? (
-				<div className="modal modal-open">
-					<div className="modal-box max-w-md rounded-3xl">
-						<button
-							type="button"
-							onClick={handleCloseForgotModal}
-							disabled={forgotLoading}
-							className="btn btn-circle btn-ghost btn-sm absolute right-3 top-3"
-						>
-							✕
-						</button>
-
-						<div className="mb-5">
-							<div className="mb-3 flex flex-wrap gap-2">
-								<span className="badge badge-warning">Forgot Password</span>
-								<span className="badge badge-outline">Email Reset</span>
-							</div>
-
-							<h3 className="text-2xl font-black text-base-content">
-								Reset your password
-							</h3>
-
-							<p className="mt-2 text-sm leading-relaxed text-base-content/60">
-								Masukkan email akun Joburaku kamu. Kami akan mengirimkan link
-								untuk membuat password baru.
-							</p>
-						</div>
-
-						<form onSubmit={handleForgotPassword} className="space-y-4">
-							<label className="form-control">
-								<div className="label">
-									<span className="label-text font-medium">Email</span>
-								</div>
-
-								<input
-									type="email"
-									name="email"
-									value={forgotForm.email}
-									onChange={handleForgotChange}
-									disabled={forgotLoading}
-									placeholder="example@mail.com"
-									className="input input-bordered w-full"
-								/>
-							</label>
-
-							<div className="alert alert-info">
-								<span className="text-sm">
-									Link reset password akan dikirim ke email. Setelah itu buka
-									link tersebut untuk set password baru.
-								</span>
-							</div>
-
-							<div className="modal-action">
-								<button
-									type="button"
-									onClick={handleCloseForgotModal}
-									disabled={forgotLoading}
-									className="btn btn-ghost"
-								>
-									Cancel
-								</button>
-
-								<button
-									type="submit"
-									disabled={forgotLoading}
-									className="btn btn-primary"
-								>
-									{forgotLoading ? (
-										<span className="loading loading-spinner loading-sm"></span>
-									) : (
-										"Send Reset Link"
-									)}
-								</button>
-							</div>
-						</form>
-					</div>
-
-					<div className="modal-backdrop" onClick={handleCloseForgotModal}>
-						<button type="button">close</button>
-					</div>
-				</div>
-			) : null}
 		</div>
 	);
 }

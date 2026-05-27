@@ -1,20 +1,10 @@
-// import logo from "../assets/logo.webp";
-
 export default function Footer() {
 	return (
-		<footer className="mt-auto footer footer-center bg-base-100 text-base-content p-6 mt-10 bottom-0 z-50 border-t border-base-300">
+		<footer className="footer footer-center mt-auto border-t border-base-300 bg-base-100 p-6 text-base-content">
 			<aside>
-				<div className="flex items-center justify-center gap-3">
-					{/* <img
-						src={logo}
-						alt="Joburaku Logo"
-						className="w-7 h-7 rounded-lg object-cover"
-					/> */}
-
-					<p className="text-sm text-base-content/50">
-						Copyright © {new Date().getFullYear()} - All rights reserved
-					</p>
-				</div>
+				<p className="text-sm text-base-content/50">
+					Copyright © {new Date().getFullYear()} Signban - All rights reserved
+				</p>
 			</aside>
 		</footer>
 	);
