@@ -67,6 +67,7 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
   const [boardMembers, setBoardMembers] = useState([]);
   const [addingAssignee, setAddingAssignee] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [generatingAI, setGeneratingAI] = useState(false);
 
   useEffect(() => {
     async function fetchCard() {
@@ -254,6 +255,26 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
     }
   }
 
+  async function handleGenerateWithAI() {
+    setGeneratingAI(true);
+    try {
+      const data = await BoardService.generateChecklistWithAI(boardId, cardId);
+      setChecklists(data.checklists || []);
+      if (data.checklists?.[0]?.Card?.priority) {
+        setPriority(data.checklists[0].Card.priority);
+      }
+      // Re-fetch card to get updated priority and checklists
+      const { data: refreshed } = await api.get(`/boards/${boardId}/cards/${cardId}`);
+      setChecklists(refreshed.card.Checklists || []);
+      setPriority(refreshed.card.priority || priority);
+      toast.success("Checklist has been generated successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to generate checklist");
+    } finally {
+      setGeneratingAI(false);
+    }
+  }
+
   async function handleAddChecklist(e) {
     e.preventDefault();
     const trimmed = newChecklistTitle.trim();
@@ -351,8 +372,17 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
           </h2>
         </div>
 
-        <button type="button" className="btn btn-outline btn-sm shrink-0">
-          ✦ Generate Checklist
+        <button
+          type="button"
+          className="btn btn-outline btn-sm shrink-0"
+          onClick={handleGenerateWithAI}
+          disabled={generatingAI}
+        >
+          {generatingAI ? (
+            <span className="loading loading-spinner loading-xs" />
+          ) : (
+            "✦ Generate Checklist"
+          )}
         </button>
       </div>
 

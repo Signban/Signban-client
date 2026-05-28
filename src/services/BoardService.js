@@ -112,6 +112,13 @@ class BoardService {
 		);
 		return data;
 	}
+
+	static async generateChecklistWithAI(boardId, cardId) {
+		const { data } = await api.post(
+			`/boards/${boardId}/cards/${cardId}/checklists/ai-generate`,
+		);
+		return data;
+	}
 }
 
 export default BoardService;
