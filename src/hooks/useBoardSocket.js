@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import socket from "../services/Socket";
 import { normalizeBoard } from "../utils/boardNormalizer";
 
-export default function useBoardSocket({
-	boardId,
-	fetchBoardDetail,
-	setBoard,
-}) {
+export default function useBoardSocket({ boardId, setBoard }) {
 	const [draggingCards, setDraggingCards] = useState({});
 
 	useEffect(() => {
@@ -19,12 +15,9 @@ export default function useBoardSocket({
 		socket.emit("board:join", boardId);
 
 		const syncBoardFromSocket = (payload) => {
-			if (payload?.board) {
-				setBoard(normalizeBoard(payload.board));
-				return;
-			}
+			if (!payload?.board) return;
 
-			fetchBoardDetail({ showLoading: false });
+			setBoard(normalizeBoard(payload.board));
 		};
 
 		const handleCardDragStart = ({ cardId, userName }) => {
@@ -75,7 +68,7 @@ export default function useBoardSocket({
 			socket.off("card:drag-start", handleCardDragStart);
 			socket.off("card:drag-end", handleCardDragEnd);
 		};
-	}, [boardId, fetchBoardDetail, setBoard]);
+	}, [boardId, setBoard]);
 
 	return {
 		draggingCards,

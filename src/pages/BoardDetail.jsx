@@ -33,14 +33,12 @@ export default function BoardDetailPage() {
 		stopSoftLoading,
 		fetchBoardDetail,
 		handleAddList,
-		handleAddCard,
 	} = useBoardDetail(boardId);
 
 	const lists = useMemo(() => board?.lists || [], [board]);
 
 	const { draggingCards } = useBoardSocket({
 		boardId,
-		fetchBoardDetail,
 		setBoard,
 	});
 

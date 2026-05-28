@@ -7,6 +7,7 @@ import BoardPage from "./pages/BoardPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import BoardDetailPage from "./pages/BoardDetail";
 import RegisterPage from "./pages/RegisterPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
 	return (
@@ -20,10 +21,10 @@ function App() {
 				<Route element={<MainLayout />}>
 					<Route path="/" element={<Navigate to="/dashboard" replace />} />
 					<Route path="/dashboard" element={<BoardPage />} />
-					<Route path="/dashboard/detail" element={<BoardDetailPage />} />
 					<Route path="/dashboard/:id" element={<BoardDetailPage />} />
 				</Route>
 
+				<Route path="/reset-password" element={<ResetPasswordPage />} />
 				<Route path="*" element={<NotFoundPage />} />
 			</Routes>
 
