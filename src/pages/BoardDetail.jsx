@@ -85,6 +85,7 @@ export default function BoardDetailPage() {
 			modal.open({
 				title: "Card Detail",
 				size: "2xl",
+				onClose: () => fetchBoardDetail({ showLoading: false }),
 				content: ({ close }) => (
 					<CardDetailModalContent
 						boardId={boardId}
@@ -94,7 +95,7 @@ export default function BoardDetailPage() {
 				),
 			});
 		},
-		[boardId, modal],
+		[boardId, fetchBoardDetail, modal],
 	);
 
 	useEffect(() => {

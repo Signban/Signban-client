@@ -6,8 +6,7 @@ import LoginPage from "./pages/LoginPage";
 import BoardPage from "./pages/BoardPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import BoardDetailPage from "./pages/BoardDetail";
-// import RegisterPage from "./pages/RegisterPage";
-import CardDetailModalContent from "./components/modals/CardDetailModalContent";
+import RegisterPage from "./pages/RegisterPage";
 
 function App() {
 	return (
@@ -15,7 +14,7 @@ function App() {
 			<Routes>
 				<Route element={<AuthLayout />}>
 					<Route path="/login" element={<LoginPage />} />
-					{/* <Route path="/register" element={<RegisterPage />} /> */}
+					<Route path="/register" element={<RegisterPage />} />
 				</Route>
 
 				<Route element={<MainLayout />}>
