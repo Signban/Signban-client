@@ -37,7 +37,6 @@ export default function BoardDetailPage() {
 
 	const { draggingCards } = useBoardSocket({
 		boardId,
-		fetchBoardDetail,
 		setBoard,
 	});
 
