@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../contexts/AuthContext";
 import AuthService from "../services/AuthService";
@@ -18,6 +18,62 @@ export default function SettingsPage() {
 
   const [updatingName, setUpdatingName] = useState(false);
   const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [updatingAvatar, setUpdatingAvatar] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const fileInputRef = useRef(null);
+
+  const handleImageChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      return;
+    }
+
+    const maxSizeInBytes = 2 * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      toast.error("Image size must be less than 2MB");
+      return;
+    }
+
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleResetSelectedImage = () => {
+    setSelectedImage(null);
+    setImagePreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const handleUpdateAvatar = async (event) => {
+    event.preventDefault();
+
+    if (!selectedImage) {
+      toast.error("Please choose an image first");
+      return;
+    }
+
+    try {
+      setUpdatingAvatar(true);
+      const formData = new FormData();
+      formData.append("avatar", selectedImage);
+      await AuthService.updateAvatar(formData);
+      await fetchCurrentUser();
+      handleResetSelectedImage();
+      toast.success("Profile picture updated successfully");
+    } catch (error) {
+      const message =
+        error.response?.data?.message || "Failed to update profile picture";
+      toast.error(message);
+    } finally {
+      setUpdatingAvatar(false);
+    }
+  };
 
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -117,34 +173,99 @@ export default function SettingsPage() {
 
   return (
     <section className="min-h-[80vh] bg-base-200 px-4 py-10 md:px-8 lg:px-10">
-      <div className="mx-auto max-w-5xl">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr]">
-          
+      <div className="mx-auto max-w-5xl space-y-8">
+
+        {/* Page Title */}
+        <div>
+          <h1 className="text-3xl font-bold text-base-content">Account Settings</h1>
+          <p className="mt-1 text-base-content/50">Manage your profile and security preferences</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
+
+          {/* Sidebar */}
           <aside className="space-y-4">
             <div className="card bg-base-100 border border-base-300 shadow-md">
-              <div className="card-body items-center gap-4 p-6 text-center">
-                {currentUser?.avatarUrl ? (
-                  <img
-                    src={currentUser.avatarUrl}
-                    alt={currentUser.name}
-                    className="h-20 w-20 rounded-full object-cover ring-2 ring-primary ring-offset-2 ring-offset-base-100"
-                  />
-                ) : (
-                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary text-3xl font-bold text-primary-content ring-2 ring-primary ring-offset-2 ring-offset-base-100">
-                    {currentUser?.name?.charAt(0).toUpperCase() || "U"}
+              <div className="card-body items-center gap-3 p-6 text-center">
+                <div
+                  className="relative cursor-pointer group"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Preview" className="h-28 w-28 rounded-full object-cover ring-4 ring-base-content/10 shadow-lg" />
+                  ) : currentUser?.avatarUrl ? (
+                    <img src={currentUser.avatarUrl} alt={currentUser.name} className="h-28 w-28 rounded-full object-cover ring-4 ring-base-content/10 shadow-lg" />
+                  ) : (
+                    <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full bg-primary text-4xl font-bold text-primary-content ring-4 ring-base-content/10 shadow-lg">
+                      {currentUser?.name?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
                   </div>
-                )}
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-widest text-base-content/40 mb-1">
-                    Account
-                  </p>
-                  <h2 className="text-lg font-bold text-base-content">
-                    {currentUser?.name || "User"}
-                  </h2>
-                  <p className="text-sm text-base-content/60 break-all">
-                    {currentUser?.email}
-                  </p>
                 </div>
+
+                <div>
+                  <h2 className="text-lg font-bold text-base-content">{currentUser?.name || "User"}</h2>
+                  <p className="text-sm text-base-content/50 break-all">{currentUser?.email}</p>
+                </div>
+
+                <div className="divider my-0"></div>
+
+                <form onSubmit={handleUpdateAvatar} className="w-full space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-base-content/40 text-left">Change Profile Picture</p>
+
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={updatingAvatar}
+                    className="btn btn-outline btn-sm w-full"
+                  >
+                    Choose Photo
+                  </button>
+
+                  {imagePreview && (
+                    <p className="text-xs text-base-content/50 text-left truncate">{selectedImage?.name}</p>
+                  )}
+
+                  <p className="text-xs text-base-content/40 text-left">JPG, PNG, GIF. Max 2MB.</p>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    disabled={updatingAvatar}
+                    className="hidden"
+                  />
+
+                  {selectedImage && (
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleResetSelectedImage}
+                        disabled={updatingAvatar}
+                        className="btn btn-ghost btn-sm flex-1"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={updatingAvatar}
+                        className="btn btn-primary btn-sm flex-1"
+                      >
+                        {updatingAvatar ? (
+                          <span className="loading loading-spinner loading-xs"></span>
+                        ) : (
+                          "Upload"
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </form>
               </div>
             </div>
           </aside>
@@ -199,7 +320,7 @@ export default function SettingsPage() {
                     />
                   </label>
 
-                  <div className="flex justify-end pt-2">
+                  <div className="flex justify-end pt-6">
                     <button
                       type="submit"
                       disabled={updatingName}
@@ -351,7 +472,7 @@ export default function SettingsPage() {
                     </label>
                   </div>
 
-                  <div className="flex justify-end pt-2">
+                  <div className="flex justify-end pt-3">
                     <button
                       type="submit"
                       disabled={updatingPassword}

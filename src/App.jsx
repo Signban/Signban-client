@@ -9,6 +9,7 @@ import BoardDetailPage from "./pages/BoardDetail";
 import RegisterPage from "./pages/RegisterPage";
 import CardDetailModalContent from "./components/modals/CardDetailModalContent";
 import SettingsPage from "./pages/SettingsPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
 
