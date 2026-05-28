@@ -66,6 +66,27 @@ export default function useBoardDragAndDrop({
 
 			const activeData = active.data.current;
 
+			// Preview tuker posisi LIST saat drag
+			if (activeData?.type === "list") {
+				const activeListId = Number(String(active.id).replace("list-", ""));
+				const overList = findListByDndId(lists, over.id);
+
+				if (!overList) return;
+
+				const oldIndex = lists.findIndex((list) => list.id === activeListId);
+				const newIndex = lists.findIndex((list) => list.id === overList.id);
+
+				if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
+
+				setBoard((prevBoard) => ({
+					...prevBoard,
+					lists: arrayMove(prevBoard.lists, oldIndex, newIndex),
+				}));
+
+				return;
+			}
+
+			// Preview pindah CARD antar list
 			if (activeData?.type !== "card") return;
 
 			const activeCardId = Number(String(active.id).replace("card-", ""));
@@ -123,7 +144,6 @@ export default function useBoardDragAndDrop({
 		},
 		[board, lists, setBoard],
 	);
-
 	const handleDragEnd = useCallback(
 		async (event) => {
 			const { active, over } = event;
@@ -136,12 +156,18 @@ export default function useBoardDragAndDrop({
 			try {
 				if (activeData?.type === "list") {
 					const activeListId = Number(String(active.id).replace("list-", ""));
-					const overListId = Number(String(over.id).replace("list-", ""));
+					const overList = findListByDndId(lists, over.id);
+
+					if (!overList) return;
+
+					const overListId = overList.id;
 
 					if (activeListId === overListId) return;
 
 					const oldIndex = lists.findIndex((list) => list.id === activeListId);
 					const newIndex = lists.findIndex((list) => list.id === overListId);
+
+					if (oldIndex < 0 || newIndex < 0) return;
 
 					const nextLists = arrayMove(lists, oldIndex, newIndex);
 
@@ -156,8 +182,6 @@ export default function useBoardDragAndDrop({
 						newPosition: newIndex,
 					});
 
-					// setBoard(normalizeBoard(response.board));
-
 					socket.emit("list:drag-end", {
 						boardId,
 						listId: activeListId,
@@ -166,7 +190,6 @@ export default function useBoardDragAndDrop({
 					stopSoftLoading();
 					return;
 				}
-
 				if (activeData?.type === "card") {
 					const activeCardId = Number(String(active.id).replace("card-", ""));
 					const currentLists = board?.lists || [];
