@@ -361,12 +361,20 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 			</div>
 
 			{card.coverUrl && (
-				<div className="-mx-6 -mt-6 mb-2 overflow-hidden rounded-t-3xl">
-					<img
-						src={card.coverUrl}
-						alt="Card cover"
-						className="h-48 w-full object-cover"
-					/>
+				<div className="-mx-6 -mt-6 mb-2 rounded-t-3xl bg-base-200/60 p-4">
+					<a
+						href={card.coverUrl}
+						target="_blank"
+						rel="noreferrer"
+						className="flex justify-center"
+						title="Open cover image in new tab"
+					>
+						<img
+							src={card.coverUrl}
+							alt="Card cover"
+							className="max-h-72 max-w-full cursor-zoom-in rounded-2xl shadow-sm"
+						/>
+					</a>
 				</div>
 			)}
 
