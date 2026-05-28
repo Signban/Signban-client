@@ -62,6 +62,16 @@ class BoardService {
 		return data;
 	}
 
+	static async addAssignee(boardId, cardId, userId) {
+		const { data } = await api.post(`/boards/${boardId}/cards/${cardId}/assignees`, { userId });
+		return data;
+	}
+
+	static async removeAssignee(boardId, cardId, userId) {
+		const { data } = await api.delete(`/boards/${boardId}/cards/${cardId}/assignees/${userId}`);
+		return data;
+	}
+
 	static async createChecklist(boardId, cardId, payload) {
 		const { data } = await api.post(
 			`/boards/${boardId}/cards/${cardId}/checklists`,
@@ -72,6 +82,13 @@ class BoardService {
 
 	static async createComment(boardId, cardId, payload) {
 		const { data } = await api.post(`/boards/${boardId}/cards/${cardId}/comments`, payload);
+		return data;
+	}
+
+	static async deleteChecklist(boardId, cardId, checklistId) {
+		const { data } = await api.delete(
+			`/boards/${boardId}/cards/${cardId}/checklists/${checklistId}`,
+		);
 		return data;
 	}
 
