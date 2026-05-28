@@ -1,0 +1,69 @@
+import api from "./api";
+
+class BoardService {
+	static async getBoards() {
+		const { data } = await api.get("/boards");
+		return data;
+	}
+
+	static async createBoard(payload) {
+		const { data } = await api.post("/boards", payload);
+		return data;
+	}
+
+	static async getBoardDetail(boardId) {
+		const { data } = await api.get(`/boards/${boardId}`);
+		return data;
+	}
+
+	static async updateBoard(boardId, payload) {
+		const { data } = await api.patch(`/boards/${boardId}`, payload);
+		return data;
+	}
+
+	static async getMembers(boardId) {
+		const { data } = await api.get(`/boards/${boardId}/members`);
+		return data;
+	}
+
+	static async addMember(boardId, payload) {
+		const { data } = await api.post(`/boards/${boardId}/members`, payload);
+		return data;
+	}
+
+	static async removeMember(boardId, userId) {
+		const { data } = await api.delete(`/boards/${boardId}/members/${userId}`);
+		return data;
+	}
+
+	static async createList(boardId, payload) {
+		const { data } = await api.post(`/boards/${boardId}/lists`, payload);
+		return data;
+	}
+
+	static async moveList(boardId, listId, payload) {
+		const { data } = await api.patch(
+			`/boards/${boardId}/lists/${listId}/move`,
+			payload,
+		);
+		return data;
+	}
+
+	static async createCard(boardId, listId, payload) {
+		const { data } = await api.post(
+			`/boards/${boardId}/lists/${listId}/cards`,
+			payload,
+		);
+		return data;
+	}
+
+	static async moveCard(boardId, cardId, payload) {
+		const { data } = await api.patch(
+			`/boards/${boardId}/cards/${cardId}/move`,
+			payload,
+		);
+		return data;
+	}
+}
+
+export default BoardService;

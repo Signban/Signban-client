@@ -18,7 +18,7 @@ function App() {
 				<Route element={<MainLayout />}>
 					<Route path="/" element={<Navigate to="/dashboard" replace />} />
 					<Route path="/dashboard" element={<BoardPage />} />
-					<Route path="/dashboard/detail" element={<BoardDetailPage />} />
+					<Route path="/dashboard/:id" element={<BoardDetailPage />} />
 				</Route>
 
 				<Route path="*" element={<NotFoundPage />} />
