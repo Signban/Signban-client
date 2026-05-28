@@ -56,6 +56,10 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
   const [showChecklistForm, setShowChecklistForm] = useState(false);
   const [newChecklistTitle, setNewChecklistTitle] = useState("");
   const [addingChecklist, setAddingChecklist] = useState(false);
+  const [assignees, setAssignees] = useState([]);
+  const [showAssigneePicker, setShowAssigneePicker] = useState(false);
+  const [boardMembers, setBoardMembers] = useState([]);
+  const [addingAssignee, setAddingAssignee] = useState(false);
 
   useEffect(() => {
     async function fetchCard() {
@@ -69,6 +73,7 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
         setDueDate(data.card.dueDate ? data.card.dueDate.slice(0, 10) : "");
         setComments(data.card.Comments || []);
         setChecklists(data.card.Checklists || []);
+        setAssignees(data.card.CardAssignees || []);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load card");
       } finally {
@@ -167,6 +172,35 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
     }
   }
 
+  async function handleOpenAssigneePicker() {
+    setShowAssigneePicker((prev) => !prev);
+    if (boardMembers.length === 0) {
+      const data = await BoardService.getMembers(boardId);
+      setBoardMembers(data.resMembers || []);
+    }
+  }
+
+  async function handleAddAssignee(member) {
+    setAddingAssignee(true);
+    try {
+      await BoardService.addAssignee(boardId, cardId, member.UserId);
+      const { data } = await api.get(`/boards/${boardId}/cards/${cardId}`);
+      setAssignees(data.card.CardAssignees || []);
+      setShowAssigneePicker(false);
+    } finally {
+      setAddingAssignee(false);
+    }
+  }
+
+  async function handleRemoveAssignee(userId) {
+    try {
+      await BoardService.removeAssignee(boardId, cardId, userId);
+      setAssignees((prev) => prev.filter((a) => a.UserId !== userId && a.User?.id !== userId));
+    } catch {
+      // silently ignore
+    }
+  }
+
   async function handleAddChecklist(e) {
     e.preventDefault();
     const trimmed = newChecklistTitle.trim();
@@ -246,15 +280,63 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
           {/* Assignees */}
           <Section label="Assignees">
             <div className="flex flex-wrap items-center gap-2">
-              {card.CardAssignees?.map((a) => (
-                <div key={a.id} className="flex items-center gap-1.5">
+              {assignees.map((a) => (
+                <div key={a.id} className="group flex items-center gap-1.5">
                   <MemberAvatar member={a.User} size="sm" />
                   <span className="text-sm font-medium text-base-content">{a.User.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveAssignee(a.User.id)}
+                    className="hidden text-xs text-base-content/30 hover:text-error group-hover:inline"
+                  >
+                    ✕
+                  </button>
                 </div>
               ))}
-              <button type="button" className="btn btn-outline btn-xs rounded-full">
-                + Add Assignee
-              </button>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={handleOpenAssigneePicker}
+                  className="btn btn-outline btn-xs rounded-full"
+                >
+                  + Add Assignee
+                </button>
+
+                {showAssigneePicker && (
+                  <div className="absolute left-0 top-full z-10 mt-1 w-52 rounded-2xl border border-base-300 bg-base-100 py-2 shadow-lg">
+                    {boardMembers.filter(
+                      (m) => !assignees.some((a) => a.User?.id === m.UserId),
+                    ).length === 0 ? (
+                      <p className="px-4 py-2 text-xs text-base-content/40">All members assigned</p>
+                    ) : (
+                      boardMembers
+                        .filter((m) => !assignees.some((a) => a.User?.id === m.UserId))
+                        .map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            disabled={addingAssignee}
+                            onClick={() => handleAddAssignee(m)}
+                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm hover:bg-base-200"
+                          >
+                            <MemberAvatar member={m.User} size="sm" />
+                            <span className="font-medium">{m.User.name}</span>
+                          </button>
+                        ))
+                    )}
+                    <div className="mt-1 border-t border-base-300 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowAssigneePicker(false)}
+                        className="w-full px-4 py-1.5 text-left text-xs text-base-content/40 hover:bg-base-200"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </Section>
 

@@ -62,6 +62,16 @@ class BoardService {
 		return data;
 	}
 
+	static async addAssignee(boardId, cardId, userId) {
+		const { data } = await api.post(`/boards/${boardId}/cards/${cardId}/assignees`, { userId });
+		return data;
+	}
+
+	static async removeAssignee(boardId, cardId, userId) {
+		const { data } = await api.delete(`/boards/${boardId}/cards/${cardId}/assignees/${userId}`);
+		return data;
+	}
+
 	static async createChecklist(boardId, cardId, payload) {
 		const { data } = await api.post(
 			`/boards/${boardId}/cards/${cardId}/checklists`,
