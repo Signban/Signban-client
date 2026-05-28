@@ -9,7 +9,6 @@ import {
 	findListByDndId,
 	getErrorMessage,
 } from "../utils/boardHelpers";
-// import { normalizeBoard } from "../utils/boardNormalizer";
 
 export default function useBoardDragAndDrop({
 	boardId,
@@ -30,6 +29,25 @@ export default function useBoardDragAndDrop({
 		}),
 	);
 
+	const emitDragEnd = useCallback(
+		(activeData) => {
+			if (activeData?.type === "list") {
+				socket.emit("list:drag-end", {
+					boardId,
+					listId: activeData.list.id,
+				});
+			}
+
+			if (activeData?.type === "card") {
+				socket.emit("card:drag-end", {
+					boardId,
+					cardId: activeData.card.id,
+				});
+			}
+		},
+		[boardId],
+	);
+
 	const handleDragStart = useCallback(
 		(event) => {
 			const data = event.active.data.current;
@@ -43,7 +61,7 @@ export default function useBoardDragAndDrop({
 					boardId,
 					cardId: data.card.id,
 					userName,
-					userId: currentUser.id,
+					userId: currentUser?.id,
 				});
 			}
 
@@ -52,6 +70,7 @@ export default function useBoardDragAndDrop({
 					boardId,
 					listId: data.list.id,
 					userName,
+					userId: currentUser?.id,
 				});
 			}
 		},
@@ -127,12 +146,18 @@ export default function useBoardDragAndDrop({
 		},
 		[board, lists, setBoard],
 	);
+
 	const handleDragEnd = useCallback(
 		async (event) => {
 			const { active, over } = event;
 			const activeData = active.data.current;
 
 			setActiveItem(null);
+
+			// Penting:
+			// Harus dikirim di awal supaya user lain clear disabled/notif,
+			// walaupun drop batal, posisi sama, atau validasi return.
+			emitDragEnd(activeData);
 
 			if (!over || !board) return;
 
@@ -145,6 +170,8 @@ export default function useBoardDragAndDrop({
 
 					const overListId = overList.id;
 
+					// Posisi tidak berubah.
+					// Tidak perlu hit API, karena drag-end sudah dikirim di atas.
 					if (activeListId === overListId) return;
 
 					const oldIndex = lists.findIndex((list) => list.id === activeListId);
@@ -165,14 +192,10 @@ export default function useBoardDragAndDrop({
 						newPosition: newIndex,
 					});
 
-					socket.emit("list:drag-end", {
-						boardId,
-						listId: activeListId,
-					});
-
 					stopSoftLoading();
 					return;
 				}
+
 				if (activeData?.type === "card") {
 					const activeCardId = Number(String(active.id).replace("card-", ""));
 					const currentLists = board?.lists || [];
@@ -195,13 +218,6 @@ export default function useBoardDragAndDrop({
 							newPosition < 0 ? destinationList.cards.length : newPosition,
 					});
 
-					// setBoard(normalizeBoard(response.board));
-
-					socket.emit("card:drag-end", {
-						boardId,
-						cardId: activeCardId,
-					});
-
 					stopSoftLoading();
 				}
 			} catch (error) {
@@ -210,7 +226,25 @@ export default function useBoardDragAndDrop({
 				toast.error(getErrorMessage(error));
 			}
 		},
-		[board, boardId, lists, setBoard, startSoftLoading, stopSoftLoading],
+		[
+			board,
+			boardId,
+			lists,
+			setBoard,
+			startSoftLoading,
+			stopSoftLoading,
+			emitDragEnd,
+		],
+	);
+
+	const handleDragCancel = useCallback(
+		(event) => {
+			const activeData = event.active?.data?.current;
+
+			setActiveItem(null);
+			emitDragEnd(activeData);
+		},
+		[emitDragEnd],
 	);
 
 	return {
@@ -219,5 +253,6 @@ export default function useBoardDragAndDrop({
 		handleDragStart,
 		handleDragOver,
 		handleDragEnd,
+		handleDragCancel,
 	};
 }

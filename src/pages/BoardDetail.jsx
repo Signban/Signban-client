@@ -47,6 +47,7 @@ export default function BoardDetailPage() {
 		handleDragStart,
 		handleDragOver,
 		handleDragEnd,
+		handleDragCancel,
 	} = useBoardDragAndDrop({
 		boardId,
 		board,
@@ -177,6 +178,7 @@ export default function BoardDetailPage() {
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
 				onDragEnd={handleDragEnd}
+				onDragCancel={handleDragCancel}
 			/>
 		</section>
 	);

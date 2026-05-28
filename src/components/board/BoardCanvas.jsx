@@ -18,6 +18,7 @@ export default function BoardCanvas({
 	onDragStart,
 	onDragOver,
 	onDragEnd,
+	onDragCancel,
 }) {
 	const collisionDetection = useCallback((args) => {
 		const activeType = args.active?.data?.current?.type;
@@ -42,6 +43,7 @@ export default function BoardCanvas({
 				onDragStart={onDragStart}
 				onDragOver={onDragOver}
 				onDragEnd={onDragEnd}
+				onDragCancel={onDragCancel}
 			>
 				<div className="h-full overflow-x-auto overflow-y-hidden px-4 py-6 sm:px-6 lg:px-8">
 					<SortableContext
