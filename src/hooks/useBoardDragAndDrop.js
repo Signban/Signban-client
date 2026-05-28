@@ -9,7 +9,6 @@ import {
 	findListByDndId,
 	getErrorMessage,
 } from "../utils/boardHelpers";
-import { normalizeBoard } from "../utils/boardNormalizer";
 
 export default function useBoardDragAndDrop({
 	boardId,
@@ -19,7 +18,6 @@ export default function useBoardDragAndDrop({
 	setBoard,
 	startSoftLoading,
 	stopSoftLoading,
-	fetchBoardDetail,
 }) {
 	const [activeItem, setActiveItem] = useState(null);
 
@@ -29,6 +27,25 @@ export default function useBoardDragAndDrop({
 				distance: 8,
 			},
 		}),
+	);
+
+	const emitDragEnd = useCallback(
+		(activeData) => {
+			if (activeData?.type === "list") {
+				socket.emit("list:drag-end", {
+					boardId,
+					listId: activeData.list.id,
+				});
+			}
+
+			if (activeData?.type === "card") {
+				socket.emit("card:drag-end", {
+					boardId,
+					cardId: activeData.card.id,
+				});
+			}
+		},
+		[boardId],
 	);
 
 	const handleDragStart = useCallback(
@@ -44,6 +61,7 @@ export default function useBoardDragAndDrop({
 					boardId,
 					cardId: data.card.id,
 					userName,
+					userId: currentUser?.id,
 				});
 			}
 
@@ -52,6 +70,7 @@ export default function useBoardDragAndDrop({
 					boardId,
 					listId: data.list.id,
 					userName,
+					userId: currentUser?.id,
 				});
 			}
 		},
@@ -65,6 +84,10 @@ export default function useBoardDragAndDrop({
 			if (!over || !board) return;
 
 			const activeData = active.data.current;
+
+			// Untuk list, jangan reorder manual di dragOver.
+			// Bayangan tuker posisi sudah di-handle oleh SortableContext.
+			if (activeData?.type === "list") return;
 
 			if (activeData?.type !== "card") return;
 
@@ -131,17 +154,30 @@ export default function useBoardDragAndDrop({
 
 			setActiveItem(null);
 
+			// Penting:
+			// Harus dikirim di awal supaya user lain clear disabled/notif,
+			// walaupun drop batal, posisi sama, atau validasi return.
+			emitDragEnd(activeData);
+
 			if (!over || !board) return;
 
 			try {
 				if (activeData?.type === "list") {
 					const activeListId = Number(String(active.id).replace("list-", ""));
-					const overListId = Number(String(over.id).replace("list-", ""));
+					const overList = findListByDndId(lists, over.id);
 
+					if (!overList) return;
+
+					const overListId = overList.id;
+
+					// Posisi tidak berubah.
+					// Tidak perlu hit API, karena drag-end sudah dikirim di atas.
 					if (activeListId === overListId) return;
 
 					const oldIndex = lists.findIndex((list) => list.id === activeListId);
 					const newIndex = lists.findIndex((list) => list.id === overListId);
+
+					if (oldIndex < 0 || newIndex < 0) return;
 
 					const nextLists = arrayMove(lists, oldIndex, newIndex);
 
@@ -152,15 +188,8 @@ export default function useBoardDragAndDrop({
 
 					startSoftLoading();
 
-					const response = await BoardService.moveList(boardId, activeListId, {
+					await BoardService.moveList(boardId, activeListId, {
 						newPosition: newIndex,
-					});
-
-					setBoard(normalizeBoard(response.board));
-
-					socket.emit("list:drag-end", {
-						boardId,
-						listId: activeListId,
 					});
 
 					stopSoftLoading();
@@ -182,18 +211,11 @@ export default function useBoardDragAndDrop({
 
 					startSoftLoading();
 
-					const response = await BoardService.moveCard(boardId, activeCardId, {
+					await BoardService.moveCard(boardId, activeCardId, {
 						sourceListId,
 						destinationListId: destinationList.id,
 						newPosition:
 							newPosition < 0 ? destinationList.cards.length : newPosition,
-					});
-
-					setBoard(normalizeBoard(response.board));
-
-					socket.emit("card:drag-end", {
-						boardId,
-						cardId: activeCardId,
 					});
 
 					stopSoftLoading();
@@ -202,18 +224,27 @@ export default function useBoardDragAndDrop({
 				stopSoftLoading();
 				console.log(error);
 				toast.error(getErrorMessage(error));
-				fetchBoardDetail({ showLoading: false });
 			}
 		},
 		[
 			board,
 			boardId,
-			fetchBoardDetail,
 			lists,
 			setBoard,
 			startSoftLoading,
 			stopSoftLoading,
+			emitDragEnd,
 		],
+	);
+
+	const handleDragCancel = useCallback(
+		(event) => {
+			const activeData = event.active?.data?.current;
+
+			setActiveItem(null);
+			emitDragEnd(activeData);
+		},
+		[emitDragEnd],
 	);
 
 	return {
@@ -222,5 +253,6 @@ export default function useBoardDragAndDrop({
 		handleDragStart,
 		handleDragOver,
 		handleDragEnd,
+		handleDragCancel,
 	};
 }

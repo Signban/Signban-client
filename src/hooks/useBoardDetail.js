@@ -87,32 +87,6 @@ export default function useBoardDetail(boardId) {
 		}
 	}, [boardId, startSoftLoading, stopSoftLoading]);
 
-	const handleAddCard = useCallback(
-		async (list) => {
-			const title = prompt("Card title");
-
-			if (!title) return;
-
-			try {
-				startSoftLoading();
-
-				const response = await BoardService.createCard(boardId, list.id, {
-					title,
-					priority: "medium",
-				});
-
-				setBoard(normalizeBoard(response.board));
-				toast.success(response.message || "Card created successfully");
-			} catch (error) {
-				console.log(error);
-				toast.error(getErrorMessage(error));
-			} finally {
-				stopSoftLoading();
-			}
-		},
-		[boardId, startSoftLoading, stopSoftLoading],
-	);
-
 	useEffect(() => {
 		// eslint-disable-next-line react-hooks/set-state-in-effect
 		fetchBoardDetail({ showLoading: true });
@@ -134,6 +108,5 @@ export default function useBoardDetail(boardId) {
 		stopSoftLoading,
 		fetchBoardDetail,
 		handleAddList,
-		handleAddCard,
 	};
 }

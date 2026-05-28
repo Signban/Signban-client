@@ -2,12 +2,9 @@ import { useEffect, useState } from "react";
 import socket from "../services/Socket";
 import { normalizeBoard } from "../utils/boardNormalizer";
 
-export default function useBoardSocket({
-	boardId,
-	fetchBoardDetail,
-	setBoard,
-}) {
+export default function useBoardSocket({ boardId, setBoard }) {
 	const [draggingCards, setDraggingCards] = useState({});
+	const [draggingLists, setDraggingLists] = useState({});
 
 	useEffect(() => {
 		if (!boardId) return;
@@ -19,12 +16,9 @@ export default function useBoardSocket({
 		socket.emit("board:join", boardId);
 
 		const syncBoardFromSocket = (payload) => {
-			if (payload?.board) {
-				setBoard(normalizeBoard(payload.board));
-				return;
-			}
+			if (!payload?.board) return;
 
-			fetchBoardDetail({ showLoading: false });
+			setBoard(normalizeBoard(payload.board));
 		};
 
 		const handleCardDragStart = ({ cardId, userName }) => {
@@ -38,6 +32,21 @@ export default function useBoardSocket({
 			setDraggingCards((prev) => {
 				const next = { ...prev };
 				delete next[cardId];
+				return next;
+			});
+		};
+
+		const handleListDragStart = ({ listId, userName }) => {
+			setDraggingLists((prev) => ({
+				...prev,
+				[listId]: { userName },
+			}));
+		};
+
+		const handleListDragEnd = ({ listId }) => {
+			setDraggingLists((prev) => {
+				const next = { ...prev };
+				delete next[listId];
 				return next;
 			});
 		};
@@ -58,6 +67,8 @@ export default function useBoardSocket({
 
 		socket.on("card:drag-start", handleCardDragStart);
 		socket.on("card:drag-end", handleCardDragEnd);
+		socket.on("list:drag-start", handleListDragStart);
+		socket.on("list:drag-end", handleListDragEnd);
 
 		return () => {
 			socket.emit("board:leave", boardId);
@@ -74,10 +85,13 @@ export default function useBoardSocket({
 
 			socket.off("card:drag-start", handleCardDragStart);
 			socket.off("card:drag-end", handleCardDragEnd);
+			socket.off("list:drag-start", handleListDragStart);
+			socket.off("list:drag-end", handleListDragEnd);
 		};
-	}, [boardId, fetchBoardDetail, setBoard]);
+	}, [boardId, setBoard]);
 
 	return {
 		draggingCards,
+		draggingLists,
 	};
 }

@@ -3,7 +3,16 @@ import { CSS } from "@dnd-kit/utilities";
 import { getPriorityClass } from "../../utils/boardHelpers";
 import AvatarGroup from "./AvatarGroup";
 
-export default function CardItem({ card, draggingCards = {}, onOpenCardDetail }) {
+export default function CardItem({
+	card,
+	draggingCards = {},
+	onOpenCardDetail,
+	currentUserId,
+}) {
+	const dragInfo = draggingCards[card.id];
+	const isDisabled = Boolean(dragInfo);
+	const isDraggedByOtherUser = dragInfo && dragInfo.userId !== currentUserId;
+
 	const {
 		attributes,
 		listeners,
@@ -17,6 +26,7 @@ export default function CardItem({ card, draggingCards = {}, onOpenCardDetail })
 			type: "card",
 			card,
 		},
+		disabled: isDraggedByOtherUser,
 	});
 
 	const style = {
@@ -24,18 +34,24 @@ export default function CardItem({ card, draggingCards = {}, onOpenCardDetail })
 		transition,
 	};
 
-	const dragInfo = draggingCards[card.id];
-
 	return (
 		<article
 			ref={setNodeRef}
 			style={style}
 			{...attributes}
 			{...listeners}
-			onClick={() => onOpenCardDetail(card.id)}
+			onClick={() => {
+				if (isDisabled) return;
+				onOpenCardDetail(card.id);
+			}}
+			aria-disabled={isDisabled}
 			className={`cursor-grab rounded-2xl border border-base-300 bg-base-200/60 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/50 hover:bg-base-200 active:cursor-grabbing ${
 				isDragging ? "opacity-40" : ""
-			} ${dragInfo ? "ring-2 ring-primary/30" : ""}`}
+			} ${
+				isDisabled
+					? "pointer-events-none cursor-not-allowed opacity-60 ring-2 ring-primary/30"
+					: ""
+			}`}
 		>
 			{dragInfo ? (
 				<p className="mb-3 rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary">

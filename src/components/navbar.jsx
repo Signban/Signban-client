@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 import logoDark from "../assets/logo-dark.png";
 import logoLight from "../assets/logo-light.png";
+import useNotification from "../hooks/useNotification";
 
 const navItems = [
 	{
@@ -19,6 +20,14 @@ export default function Navbar() {
 	const navigate = useNavigate();
 	const { currentUser, logout } = useAuth();
 	const { theme, isDark, toggleTheme } = useTheme();
+	const {
+		notifications,
+		unreadCount,
+		loading,
+		fetchNotifications,
+		markAsRead,
+		markAllAsRead,
+	} = useNotification();
 
 	const logo = isDark ? logoDark : logoLight;
 	const displayName = currentUser?.name || currentUser?.email || "Signban User";
@@ -128,32 +137,88 @@ export default function Navbar() {
 					)}
 				</button>
 
-				<button
-					type="button"
-					className="btn btn-ghost btn-circle"
-					aria-label="Notifications"
-					title="Notification endpoint belum dibuat"
-				>
-					<div className="indicator">
-						<span className="indicator-item badge badge-primary badge-xs">
-							0
-						</span>
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							className="h-5 w-5"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-						>
-							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeWidth="2"
-								d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-							/>
-						</svg>
+				<div className="dropdown dropdown-end">
+					<button
+						tabIndex={0}
+						type="button"
+						onClick={() => fetchNotifications()}
+						className="btn btn-ghost btn-circle"
+						aria-label="Notifications"
+					>
+						<div className="indicator">
+							{unreadCount > 0 && (
+								<span className="indicator-item badge badge-primary badge-xs">
+									{unreadCount > 99 ? "99+" : unreadCount}
+								</span>
+							)}
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								className="h-5 w-5"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth="2"
+									d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+								/>
+							</svg>
+						</div>
+					</button>
+
+					<div
+						tabIndex={0}
+						className="dropdown-content z-[60] mt-3 w-80 rounded-box border border-base-300 bg-base-100 shadow"
+					>
+						<div className="flex items-center justify-between border-b border-base-300 p-4">
+							<h3 className="font-semibold">Notifications</h3>
+							{unreadCount > 0 && (
+								<button
+									type="button"
+									onClick={markAllAsRead}
+									className="btn btn-ghost btn-xs text-xs"
+								>
+									Mark all as read
+								</button>
+							)}
+						</div>
+
+						<div className="max-h-80 overflow-y-auto">
+							{loading ? (
+								<div className="flex justify-center p-4">
+									<span className="loading loading-spinner loading-sm"></span>
+								</div>
+							) : notifications.length === 0 ? (
+								<p className="p-4 text-center text-sm text-base-content/60">
+									No notifications
+								</p>
+							) : (
+								notifications.map((notification) => (
+									<div
+										key={notification.id}
+										onClick={() =>
+											!notification.isRead && markAsRead(notification.id)
+										}
+										className={`cursor-pointer border-b border-base-300 p-4 hover:bg-base-200 ${
+											!notification.isRead ? "bg-primary/5" : ""
+										}`}
+									>
+										<Link to={`/board/${notification.BoardId}`}>
+											<p className="text-sm font-medium">
+												{notification.title}
+											</p>
+											<p className="mt-1 text-xs text-base-content/60">
+												{notification.message}
+											</p>
+										</Link>
+									</div>
+								))
+							)}
+						</div>
 					</div>
-				</button>
+				</div>
 
 				<div className="dropdown dropdown-end">
 					<div

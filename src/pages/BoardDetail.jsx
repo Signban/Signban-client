@@ -5,10 +5,13 @@ import BoardHeader from "../components/board/BoardHeader";
 import BoardPageLoader from "../components/board/BoardPageLoader";
 import BoardSyncIndicator from "../components/board/BoardSyncIndicator";
 import AddBoardMemberModalContent from "../components/modals/AddBoardMemberModalContent";
+import AddCardModalContent from "../components/modals/AddCardModalContent";
+import AddListModalContent from "../components/modals/AddListModalContent";
 import CardDetailModalContent from "../components/modals/CardDetailModalContent";
 import { useAuth } from "../contexts/AuthContext";
 import { useModal } from "../contexts/ModalContext";
 import useBoardDetail from "../hooks/useBoardDetail";
+import { normalizeBoard } from "../utils/boardNormalizer";
 import useBoardDragAndDrop from "../hooks/useBoardDragAndDrop";
 import useBoardSocket from "../hooks/useBoardSocket";
 
@@ -29,15 +32,12 @@ export default function BoardDetailPage() {
 		startSoftLoading,
 		stopSoftLoading,
 		fetchBoardDetail,
-		handleAddList,
-		handleAddCard,
 	} = useBoardDetail(boardId);
 
 	const lists = useMemo(() => board?.lists || [], [board]);
 
-	const { draggingCards } = useBoardSocket({
+	const { draggingCards, draggingLists } = useBoardSocket({
 		boardId,
-		fetchBoardDetail,
 		setBoard,
 	});
 
@@ -47,6 +47,7 @@ export default function BoardDetailPage() {
 		handleDragStart,
 		handleDragOver,
 		handleDragEnd,
+		handleDragCancel,
 	} = useBoardDragAndDrop({
 		boardId,
 		board,
@@ -61,6 +62,28 @@ export default function BoardDetailPage() {
 	const onBack = useCallback(() => {
 		navigate("/dashboard");
 	}, [navigate]);
+
+	const openAddListModal = useCallback(() => {
+		if (!boardId) return;
+
+		const position = (board?.lists?.length ?? 0) + 1;
+
+		modal.open({
+			title: "Add List",
+			size: "md",
+			content: ({ close }) => (
+				<AddListModalContent
+					boardId={boardId}
+					position={position}
+					onClose={close}
+					onSuccess={(response) => {
+						setBoard(normalizeBoard(response.board));
+						close();
+					}}
+				/>
+			),
+		});
+	}, [boardId, board?.lists?.length, modal, setBoard]);
 
 	const openAddMemberModal = useCallback(() => {
 		if (!boardId) return;
@@ -98,6 +121,29 @@ export default function BoardDetailPage() {
 		[boardId, fetchBoardDetail, modal],
 	);
 
+	const openAddCardModal = useCallback(
+		(list) => {
+			if (!boardId || !list?.id) return;
+
+			modal.open({
+				title: "Add Card",
+				size: "md",
+				content: ({ close }) => (
+					<AddCardModalContent
+						boardId={boardId}
+						listId={list.id}
+						onClose={close}
+						onSuccess={(response) => {
+							setBoard(normalizeBoard(response.board));
+							close();
+						}}
+					/>
+				),
+			});
+		},
+		[boardId, modal, setBoard],
+	);
+
 	useEffect(() => {
 		document.title = board?.name
 			? `${board.name} | Signban`
@@ -117,7 +163,7 @@ export default function BoardDetailPage() {
 				members={members}
 				onBack={onBack}
 				onAddMember={openAddMemberModal}
-				onAddList={handleAddList}
+				onAddList={openAddListModal}
 			/>
 
 			<BoardCanvas
@@ -125,12 +171,14 @@ export default function BoardDetailPage() {
 				sensors={sensors}
 				activeItem={activeItem}
 				draggingCards={draggingCards}
-				onAddList={handleAddList}
-				onAddCard={handleAddCard}
+				draggingLists={draggingLists}
+				onAddList={openAddListModal}
+				onAddCard={openAddCardModal}
 				onOpenCardDetail={openCardDetailModal}
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
 				onDragEnd={handleDragEnd}
+				onDragCancel={handleDragCancel}
 			/>
 		</section>
 	);
