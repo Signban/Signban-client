@@ -7,45 +7,37 @@ function getErrorMessage(error) {
 		error.response?.data?.message ||
 		error.response?.data?.error ||
 		error.message ||
-		"Failed to create board"
+		"Something went wrong"
 	);
 }
 
-export default function CreateBoardModalContent({ onClose, onCreated }) {
-	const [form, setForm] = useState({
-		name: "",
-		description: "",
-	});
+export default function AddBoardMemberModalContent({
+	boardId,
+	onClose,
+	onSuccess,
+}) {
+	const [email, setEmail] = useState("");
 	const [loading, setLoading] = useState(false);
-
-	const handleChange = (event) => {
-		const { name, value } = event.target;
-
-		setForm((prevForm) => ({
-			...prevForm,
-			[name]: value,
-		}));
-	};
 
 	const handleSubmit = async (event) => {
 		event.preventDefault();
 
 		const payload = {
-			name: form.name.trim(),
-			description: form.description.trim(),
+			email: email.trim(),
 		};
 
-		if (!payload.name) {
-			toast.error("Board name is required");
+		if (!payload.email) {
+			toast.error("Email is required");
 			return;
 		}
 
 		try {
 			setLoading(true);
-			const response = await BoardService.createBoard(payload);
 
-			toast.success(response.message || "Board created successfully");
-			await onCreated?.(response.board);
+			const response = await BoardService.addMember(boardId, payload);
+
+			toast.success(response.message || "Member added successfully");
+			await onSuccess?.();
 			onClose?.();
 		} catch (error) {
 			console.log(error);
@@ -59,32 +51,16 @@ export default function CreateBoardModalContent({ onClose, onCreated }) {
 		<form onSubmit={handleSubmit} className="space-y-5">
 			<label className="form-control">
 				<div className="label">
-					<span className="label-text font-medium">Board Name</span>
+					<span className="label-text font-medium">Member Email</span>
 				</div>
 
 				<input
 					disabled={loading}
-					type="text"
-					name="name"
-					value={form.name}
-					onChange={handleChange}
-					placeholder="Final Project"
+					type="email"
+					value={email}
+					onChange={(event) => setEmail(event.target.value)}
+					placeholder="member@signban.com"
 					className="input input-bordered w-full"
-				/>
-			</label>
-
-			<label className="form-control">
-				<div className="label">
-					<span className="label-text font-medium">Description</span>
-				</div>
-
-				<textarea
-					disabled={loading}
-					name="description"
-					value={form.description}
-					onChange={handleChange}
-					placeholder="Board untuk tracking task final project"
-					className="textarea textarea-bordered min-h-28 w-full"
 				/>
 			</label>
 
@@ -102,7 +78,7 @@ export default function CreateBoardModalContent({ onClose, onCreated }) {
 					{loading ? (
 						<span className="loading loading-spinner loading-sm"></span>
 					) : (
-						"Create Board"
+						"Add Member"
 					)}
 				</button>
 			</div>

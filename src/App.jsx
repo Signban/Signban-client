@@ -7,6 +7,7 @@ import BoardPage from "./pages/BoardPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import BoardDetailPage from "./pages/BoardDetail";
 import RegisterPage from "./pages/RegisterPage";
+import CardDetailModalContent from "./components/modals/CardDetailModalContent";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<BoardPage />} />
           <Route path="/dashboard/detail" element={<BoardDetailPage />} />
+          <Route path="/dashboard/:id" element={<BoardDetailPage />} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
