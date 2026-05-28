@@ -62,6 +62,19 @@ class BoardService {
 		return data;
 	}
 
+	static async updateCardCover(boardId, cardId, payload) {
+		const { data } = await api.patch(
+			`/boards/${boardId}/cards/${cardId}/cover`,
+			payload,
+			{
+				headers: {
+					"Content-Type": "multipart/form-data",
+				},
+			},
+		);
+		return data;
+	}
+
 	static async deleteCard(boardId, cardId) {
 		const { data } = await api.delete(`/boards/${boardId}/cards/${cardId}`);
 		return data;
