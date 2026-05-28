@@ -5,10 +5,12 @@ import BoardHeader from "../components/board/BoardHeader";
 import BoardPageLoader from "../components/board/BoardPageLoader";
 import BoardSyncIndicator from "../components/board/BoardSyncIndicator";
 import AddBoardMemberModalContent from "../components/modals/AddBoardMemberModalContent";
+import AddCardModalContent from "../components/modals/AddCardModalContent";
 import CardDetailModalContent from "../components/modals/CardDetailModalContent";
 import { useAuth } from "../contexts/AuthContext";
 import { useModal } from "../contexts/ModalContext";
 import useBoardDetail from "../hooks/useBoardDetail";
+import { normalizeBoard } from "../utils/boardNormalizer";
 import useBoardDragAndDrop from "../hooks/useBoardDragAndDrop";
 import useBoardSocket from "../hooks/useBoardSocket";
 
@@ -98,6 +100,29 @@ export default function BoardDetailPage() {
 		[boardId, fetchBoardDetail, modal],
 	);
 
+	const openAddCardModal = useCallback(
+		(list) => {
+			if (!boardId || !list?.id) return;
+
+			modal.open({
+				title: "Add Card",
+				size: "md",
+				content: ({ close }) => (
+					<AddCardModalContent
+						boardId={boardId}
+						listId={list.id}
+						onClose={close}
+						onSuccess={(response) => {
+							setBoard(normalizeBoard(response.board));
+							close();
+						}}
+					/>
+				),
+			});
+		},
+		[boardId, modal, setBoard],
+	);
+
 	useEffect(() => {
 		document.title = board?.name
 			? `${board.name} | Signban`
@@ -126,7 +151,7 @@ export default function BoardDetailPage() {
 				activeItem={activeItem}
 				draggingCards={draggingCards}
 				onAddList={handleAddList}
-				onAddCard={handleAddCard}
+				onAddCard={openAddCardModal}
 				onOpenCardDetail={openCardDetailModal}
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
