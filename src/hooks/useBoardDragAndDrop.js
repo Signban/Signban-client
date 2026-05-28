@@ -9,7 +9,7 @@ import {
 	findListByDndId,
 	getErrorMessage,
 } from "../utils/boardHelpers";
-import { normalizeBoard } from "../utils/boardNormalizer";
+// import { normalizeBoard } from "../utils/boardNormalizer";
 
 export default function useBoardDragAndDrop({
 	boardId,
@@ -19,7 +19,6 @@ export default function useBoardDragAndDrop({
 	setBoard,
 	startSoftLoading,
 	stopSoftLoading,
-	fetchBoardDetail,
 }) {
 	const [activeItem, setActiveItem] = useState(null);
 
@@ -152,11 +151,11 @@ export default function useBoardDragAndDrop({
 
 					startSoftLoading();
 
-					const response = await BoardService.moveList(boardId, activeListId, {
+					await BoardService.moveList(boardId, activeListId, {
 						newPosition: newIndex,
 					});
 
-					setBoard(normalizeBoard(response.board));
+					// setBoard(normalizeBoard(response.board));
 
 					socket.emit("list:drag-end", {
 						boardId,
@@ -182,14 +181,14 @@ export default function useBoardDragAndDrop({
 
 					startSoftLoading();
 
-					const response = await BoardService.moveCard(boardId, activeCardId, {
+					await BoardService.moveCard(boardId, activeCardId, {
 						sourceListId,
 						destinationListId: destinationList.id,
 						newPosition:
 							newPosition < 0 ? destinationList.cards.length : newPosition,
 					});
 
-					setBoard(normalizeBoard(response.board));
+					// setBoard(normalizeBoard(response.board));
 
 					socket.emit("card:drag-end", {
 						boardId,
@@ -202,18 +201,9 @@ export default function useBoardDragAndDrop({
 				stopSoftLoading();
 				console.log(error);
 				toast.error(getErrorMessage(error));
-				fetchBoardDetail({ showLoading: false });
 			}
 		},
-		[
-			board,
-			boardId,
-			fetchBoardDetail,
-			lists,
-			setBoard,
-			startSoftLoading,
-			stopSoftLoading,
-		],
+		[board, boardId, lists, setBoard, startSoftLoading, stopSoftLoading],
 	);
 
 	return {
