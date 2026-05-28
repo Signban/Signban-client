@@ -57,6 +57,32 @@ class BoardService {
 		return data;
 	}
 
+	static async updateCard(boardId, cardId, payload) {
+		const { data } = await api.put(`/boards/${boardId}/cards/${cardId}`, payload);
+		return data;
+	}
+
+	static async createChecklist(boardId, cardId, payload) {
+		const { data } = await api.post(
+			`/boards/${boardId}/cards/${cardId}/checklists`,
+			payload,
+		);
+		return data;
+	}
+
+	static async createComment(boardId, cardId, payload) {
+		const { data } = await api.post(`/boards/${boardId}/cards/${cardId}/comments`, payload);
+		return data;
+	}
+
+	static async updateChecklist(boardId, cardId, checklistId, payload) {
+		const { data } = await api.patch(
+			`/boards/${boardId}/cards/${cardId}/checklists/${checklistId}`,
+			payload,
+		);
+		return data;
+	}
+
 	static async moveCard(boardId, cardId, payload) {
 		const { data } = await api.patch(
 			`/boards/${boardId}/cards/${cardId}/move`,

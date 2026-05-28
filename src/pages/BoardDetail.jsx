@@ -486,7 +486,7 @@ export default function BoardDetailPage() {
       content: ({ close }) => (
         <CardDetailModalContent
           boardId={boardId}
-          onClose={close}
+          onClose={() => { close(); fetchBoardDetail(); }}
           cardId={cardId}
         />
       ),
