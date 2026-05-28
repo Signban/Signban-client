@@ -32,7 +32,6 @@ export default function BoardDetailPage() {
 		startSoftLoading,
 		stopSoftLoading,
 		fetchBoardDetail,
-		handleAddList,
 	} = useBoardDetail(boardId);
 
 	const lists = useMemo(() => board?.lists || [], [board]);

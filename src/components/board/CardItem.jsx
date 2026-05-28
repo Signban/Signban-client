@@ -3,7 +3,16 @@ import { CSS } from "@dnd-kit/utilities";
 import { getPriorityClass } from "../../utils/boardHelpers";
 import AvatarGroup from "./AvatarGroup";
 
-export default function CardItem({ card, draggingCards = {}, onOpenCardDetail }) {
+export default function CardItem({
+	card,
+	draggingCards = {},
+	onOpenCardDetail,
+	currentUserId,
+}) {
+	const dragInfo = draggingCards[card.id];
+
+	const isDraggedByOtherUser = dragInfo && dragInfo.userId !== currentUserId;
+
 	const {
 		attributes,
 		listeners,
@@ -17,6 +26,7 @@ export default function CardItem({ card, draggingCards = {}, onOpenCardDetail })
 			type: "card",
 			card,
 		},
+		disabled: isDraggedByOtherUser,
 	});
 
 	const style = {
@@ -24,18 +34,21 @@ export default function CardItem({ card, draggingCards = {}, onOpenCardDetail })
 		transition,
 	};
 
-	const dragInfo = draggingCards[card.id];
-
 	return (
 		<article
 			ref={setNodeRef}
 			style={style}
 			{...attributes}
-			{...listeners}
-			onClick={() => onOpenCardDetail(card.id)}
-			className={`cursor-grab rounded-2xl border border-base-300 bg-base-200/60 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/50 hover:bg-base-200 active:cursor-grabbing ${
-				isDragging ? "opacity-40" : ""
-			} ${dragInfo ? "ring-2 ring-primary/30" : ""}`}
+			{...(isDraggedByOtherUser ? {} : listeners)}
+			onClick={() => {
+				if (isDraggedByOtherUser) return;
+				onOpenCardDetail(card.id);
+			}}
+			className={`rounded-2xl border border-base-300 bg-base-200/60 p-4 shadow-sm transition ${
+				isDraggedByOtherUser
+					? "cursor-not-allowed opacity-60 pointer-events-none ring-2 ring-primary/30"
+					: "cursor-grab hover:-translate-y-0.5 hover:border-primary/50 hover:bg-base-200 active:cursor-grabbing"
+			} ${isDragging ? "opacity-40" : ""}`}
 		>
 			{dragInfo ? (
 				<p className="mb-3 rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary">

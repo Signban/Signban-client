@@ -43,6 +43,7 @@ export default function useBoardDragAndDrop({
 					boardId,
 					cardId: data.card.id,
 					userName,
+					userId: currentUser.id,
 				});
 			}
 
