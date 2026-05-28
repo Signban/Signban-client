@@ -6,34 +6,35 @@ import LoginPage from "./pages/LoginPage";
 import BoardPage from "./pages/BoardPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import BoardDetailPage from "./pages/BoardDetail";
+import CardDetailModalContent from "./components/modals/CardDetailModalContent";
 
 function App() {
-	return (
-		<>
-			<Routes>
-				<Route element={<AuthLayout />}>
-					<Route path="/login" element={<LoginPage />} />
-				</Route>
+  return (
+    <>
+      <Routes>
+        {/* <Route element={<AuthLayout />}> */}
+        <Route path="/login" element={<LoginPage />} />
+        {/* </Route> */}
 
-				<Route element={<MainLayout />}>
-					<Route path="/" element={<Navigate to="/dashboard" replace />} />
-					<Route path="/dashboard" element={<BoardPage />} />
-					<Route path="/dashboard/:id" element={<BoardDetailPage />} />
-				</Route>
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<BoardPage />} />
+          <Route path="/dashboard/:id" element={<BoardDetailPage />} />
+        </Route>
 
-				<Route path="*" element={<NotFoundPage />} />
-			</Routes>
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
 
-			<ToastContainer
-				position="bottom-left"
-				autoClose={2000}
-				hideProgressBar={false}
-				newestOnTop
-				closeOnClick
-				pauseOnHover
-			/>
-		</>
-	);
+      <ToastContainer
+        position="bottom-left"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+      />
+    </>
+  );
 }
 
 export default App;
