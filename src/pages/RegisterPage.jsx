@@ -1,7 +1,43 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router";
+import { toast } from "react-toastify";
+import AuthService from "../services/AuthService";
+
 export default function RegisterPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    try {
+      setLoading(true);
+      await AuthService.register(form);
+      toast.success("Account created successfully. Please log in.");
+      navigate("/login");
+    } catch (error) {
+      const message = error.response?.data?.message || "Registration failed";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -60,17 +96,33 @@ export default function RegisterPage() {
                 </div>
 
                 <h2 className="text-4xl font-bold text-base-content">
-                  Sign In
+                  Create Account
                 </h2>
 
                 <p className="mt-3 text-base-content/60">
-                  Masuk menggunakan akun yang sudah ada di database Signban.
+                  Buat akun baru untuk mulai menggunakan Signban.
                 </p>
               </div>
 
               <div className="card border border-base-300 bg-base-100 shadow-xl">
                 <div className="card-body gap-5">
                   <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+                    <label className="form-control">
+                      <div className="label">
+                        <span className="label-text font-medium">Name</span>
+                      </div>
+
+                      <input
+                        disabled={loading}
+                        onChange={handleChange}
+                        value={form.name}
+                        type="text"
+                        name="name"
+                        placeholder="Your full name"
+                        className="input input-bordered w-full"
+                      />
+                    </label>
+
                     <label className="form-control">
                       <div className="label">
                         <span className="label-text font-medium">Email</span>
@@ -98,7 +150,7 @@ export default function RegisterPage() {
                         value={form.password}
                         name="password"
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder="Create a password"
                         className="input input-bordered w-full"
                       />
                     </label>
@@ -111,18 +163,20 @@ export default function RegisterPage() {
                       {loading ? (
                         <span className="loading loading-spinner loading-sm"></span>
                       ) : (
-                        "Login"
+                        "Create Account"
                       )}
                     </button>
                   </form>
 
-                  <div className="alert alert-info text-sm">
-                    <span>
-                      Untuk sekarang frontend hanya mengarah ke route API yang
-                      sudah ada:
-                      <strong>POST /login</strong>.
-                    </span>
-                  </div>
+                  <p className="text-center text-sm text-base-content/70">
+                    Already have an account?{" "}
+                    <Link
+                      to="/login"
+                      className="link link-primary font-semibold"
+                    >
+                      Sign In
+                    </Link>
+                  </p>
                 </div>
               </div>
             </div>
