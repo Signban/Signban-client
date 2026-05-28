@@ -62,6 +62,11 @@ class BoardService {
 		return data;
 	}
 
+	static async deleteCard(boardId, cardId) {
+		const { data } = await api.delete(`/boards/${boardId}/cards/${cardId}`);
+		return data;
+	}
+
 	static async addAssignee(boardId, cardId, userId) {
 		const { data } = await api.post(`/boards/${boardId}/cards/${cardId}/assignees`, { userId });
 		return data;
