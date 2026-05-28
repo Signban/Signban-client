@@ -11,6 +11,7 @@ export default function BoardCanvas({
 	sensors,
 	activeItem,
 	draggingCards,
+	draggingLists,
 	onAddList,
 	onAddCard,
 	onOpenCardDetail,
@@ -53,6 +54,7 @@ export default function BoardCanvas({
 									key={list.id}
 									list={list}
 									draggingCards={draggingCards}
+									draggingLists={draggingLists}
 									onAddCard={onAddCard}
 									onOpenCardDetail={onOpenCardDetail}
 								/>

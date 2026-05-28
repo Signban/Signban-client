@@ -36,7 +36,7 @@ export default function BoardDetailPage() {
 
 	const lists = useMemo(() => board?.lists || [], [board]);
 
-	const { draggingCards } = useBoardSocket({
+	const { draggingCards, draggingLists } = useBoardSocket({
 		boardId,
 		setBoard,
 	});
@@ -170,6 +170,7 @@ export default function BoardDetailPage() {
 				sensors={sensors}
 				activeItem={activeItem}
 				draggingCards={draggingCards}
+				draggingLists={draggingLists}
 				onAddList={openAddListModal}
 				onAddCard={openAddCardModal}
 				onOpenCardDetail={openCardDetailModal}

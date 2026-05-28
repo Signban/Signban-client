@@ -9,6 +9,7 @@ import CardItem from "./CardItem";
 export default function ListColumn({
 	list,
 	draggingCards,
+	draggingLists = {},
 	onAddCard,
 	onOpenCardDetail,
 }) {
@@ -32,12 +33,19 @@ export default function ListColumn({
 		transition,
 	};
 
+	const dragInfo = draggingLists[list.id];
+	const isDisabled = Boolean(dragInfo);
+
 	return (
 		<section
 			ref={setNodeRef}
 			style={style}
-			className={`flex h-full w-80 shrink-0 flex-col overflow-hidden rounded-3xl border border-base-300 bg-base-100 shadow-sm ${
+			className={`flex h-full w-80 shrink-0 flex-col overflow-hidden rounded-3xl border border-base-300 bg-base-100 shadow-sm transition ${
 				isDragging ? "opacity-50" : ""
+			} ${
+				isDisabled
+					? "pointer-events-none opacity-60 ring-2 ring-primary/30"
+					: ""
 			}`}
 		>
 			<div
@@ -45,6 +53,12 @@ export default function ListColumn({
 				{...listeners}
 				className="shrink-0 cursor-grab border-b border-base-300 px-4 py-4 active:cursor-grabbing"
 			>
+				{dragInfo ? (
+					<p className="mb-3 rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary">
+						{dragInfo.userName} is moving this list
+					</p>
+				) : null}
+
 				<div className="flex items-start justify-between gap-3">
 					<div className="min-w-0">
 						<h2 className="truncate font-black text-base-content">
@@ -58,6 +72,7 @@ export default function ListColumn({
 
 					<button
 						type="button"
+						disabled={isDisabled}
 						className="btn btn-ghost btn-xs rounded-xl text-base-content/50"
 						onClick={(event) => event.stopPropagation()}
 					>
@@ -83,8 +98,9 @@ export default function ListColumn({
 
 						<button
 							type="button"
+							disabled={isDisabled}
 							onClick={() => onAddCard(list)}
-							className="w-full rounded-2xl border border-dashed border-base-300 bg-base-100 py-3 text-sm font-bold text-base-content/50 transition hover:border-primary hover:bg-primary/5 hover:text-primary"
+							className="w-full rounded-2xl border border-dashed border-base-300 bg-base-100 py-3 text-sm font-bold text-base-content/50 transition hover:border-primary hover:bg-primary/5 hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
 						>
 							+ Add Card
 						</button>

@@ -10,7 +10,7 @@ export default function CardItem({
 	currentUserId,
 }) {
 	const dragInfo = draggingCards[card.id];
-
+	const isDisabled = Boolean(dragInfo);
 	const isDraggedByOtherUser = dragInfo && dragInfo.userId !== currentUserId;
 
 	const {
@@ -39,16 +39,19 @@ export default function CardItem({
 			ref={setNodeRef}
 			style={style}
 			{...attributes}
-			{...(isDraggedByOtherUser ? {} : listeners)}
+			{...listeners}
 			onClick={() => {
-				if (isDraggedByOtherUser) return;
+				if (isDisabled) return;
 				onOpenCardDetail(card.id);
 			}}
-			className={`rounded-2xl border border-base-300 bg-base-200/60 p-4 shadow-sm transition ${
-				isDraggedByOtherUser
-					? "cursor-not-allowed opacity-60 pointer-events-none ring-2 ring-primary/30"
-					: "cursor-grab hover:-translate-y-0.5 hover:border-primary/50 hover:bg-base-200 active:cursor-grabbing"
-			} ${isDragging ? "opacity-40" : ""}`}
+			aria-disabled={isDisabled}
+			className={`cursor-grab rounded-2xl border border-base-300 bg-base-200/60 p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-primary/50 hover:bg-base-200 active:cursor-grabbing ${
+				isDragging ? "opacity-40" : ""
+			} ${
+				isDisabled
+					? "pointer-events-none cursor-not-allowed opacity-60 ring-2 ring-primary/30"
+					: ""
+			}`}
 		>
 			{dragInfo ? (
 				<p className="mb-3 rounded-xl bg-primary/10 px-3 py-2 text-xs font-bold text-primary">
