@@ -85,6 +85,13 @@ class BoardService {
 		return data;
 	}
 
+	static async deleteChecklist(boardId, cardId, checklistId) {
+		const { data } = await api.delete(
+			`/boards/${boardId}/cards/${cardId}/checklists/${checklistId}`,
+		);
+		return data;
+	}
+
 	static async updateChecklist(boardId, cardId, checklistId, payload) {
 		const { data } = await api.patch(
 			`/boards/${boardId}/cards/${cardId}/checklists/${checklistId}`,

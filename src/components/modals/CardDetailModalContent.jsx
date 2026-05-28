@@ -21,7 +21,11 @@ function MemberAvatar({ member, size = "md" }) {
       className={`${sizeClass} inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-base-100 ${colorClass} font-black text-white`}
     >
       {member.avatarUrl ? (
-        <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
+        <img
+          src={member.avatarUrl}
+          alt={member.name}
+          className="h-full w-full object-cover"
+        />
       ) : (
         <span className="block leading-none">{initial}</span>
       )}
@@ -96,7 +100,11 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
     return (
       <div className="py-10 text-center">
         <p className="text-sm font-medium text-error">{error}</p>
-        <button type="button" onClick={onClose} className="btn btn-ghost btn-sm mt-4">
+        <button
+          type="button"
+          onClick={onClose}
+          className="btn btn-ghost btn-sm mt-4"
+        >
           Close
         </button>
       </div>
@@ -115,7 +123,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
   async function handleDueDateChange(e) {
     const newDate = e.target.value;
     setDueDate(newDate);
-    await BoardService.updateCard(boardId, cardId, { dueDate: newDate || null });
+    await BoardService.updateCard(boardId, cardId, {
+      dueDate: newDate || null,
+    });
   }
 
   async function handleSaveDescription() {
@@ -134,7 +144,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
     if (!trimmed) return;
     setPostingComment(true);
     try {
-      const data = await BoardService.createComment(boardId, cardId, { content: trimmed });
+      const data = await BoardService.createComment(boardId, cardId, {
+        content: trimmed,
+      });
       setComments((prev) => [...prev, data.comment]);
       setCommentText("");
     } finally {
@@ -152,7 +164,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
     } catch {
       // revert on failure
       setChecklists((prev) =>
-        prev.map((c) => (c.id === item.id ? { ...c, isCompleted: item.isCompleted } : c)),
+        prev.map((c) =>
+          c.id === item.id ? { ...c, isCompleted: item.isCompleted } : c,
+        ),
       );
     }
   }
@@ -164,11 +178,22 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
       prev.map((c) => (c.id === item.id ? { ...c, title: trimmed } : c)),
     );
     try {
-      await BoardService.updateChecklist(boardId, cardId, item.id, { title: trimmed });
+      await BoardService.updateChecklist(boardId, cardId, item.id, {
+        title: trimmed,
+      });
     } catch {
       setChecklists((prev) =>
         prev.map((c) => (c.id === item.id ? { ...c, title: item.title } : c)),
       );
+    }
+  }
+
+  async function handleDeleteChecklist(item) {
+    setChecklists((prev) => prev.filter((c) => c.id !== item.id));
+    try {
+      await BoardService.deleteChecklist(boardId, cardId, item.id);
+    } catch {
+      setChecklists((prev) => [...prev, item]);
     }
   }
 
@@ -195,7 +220,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
   async function handleRemoveAssignee(userId) {
     try {
       await BoardService.removeAssignee(boardId, cardId, userId);
-      setAssignees((prev) => prev.filter((a) => a.UserId !== userId && a.User?.id !== userId));
+      setAssignees((prev) =>
+        prev.filter((a) => a.UserId !== userId && a.User?.id !== userId),
+      );
     } catch {
       // silently ignore
     }
@@ -222,7 +249,11 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
       {/* Cover */}
       {card.coverUrl && (
         <div className="-mx-6 -mt-6 mb-2 overflow-hidden rounded-t-3xl">
-          <img src={card.coverUrl} alt="Card cover" className="h-48 w-full object-cover" />
+          <img
+            src={card.coverUrl}
+            alt="Card cover"
+            className="h-48 w-full object-cover"
+          />
         </div>
       )}
 
@@ -238,14 +269,20 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
               }`}
             >
               {Object.values(CardPriority).map((p) => (
-                <option key={p} value={p} className="bg-base-100 text-base-content normal-case">
+                <option
+                  key={p}
+                  value={p}
+                  className="bg-base-100 text-base-content normal-case"
+                >
                   {p}
                 </option>
               ))}
             </select>
 
             <label className="flex items-center gap-1.5 rounded-full bg-base-200 px-2.5 py-1">
-              <span className="text-xs font-medium text-base-content/40">Due</span>
+              <span className="text-xs font-medium text-base-content/40">
+                Due
+              </span>
               <input
                 type="date"
                 value={dueDate}
@@ -255,7 +292,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
             </label>
           </div>
 
-          <h2 className="text-xl font-black leading-snug text-base-content">{card.title}</h2>
+          <h2 className="text-xl font-black leading-snug text-base-content">
+            {card.title}
+          </h2>
         </div>
 
         <button type="button" className="btn btn-outline btn-sm shrink-0">
@@ -272,7 +311,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
             <Section label="Created by">
               <div className="flex items-center gap-2">
                 <MemberAvatar member={card.User} size="sm" />
-                <span className="text-sm font-medium text-base-content">{card.User.name}</span>
+                <span className="text-sm font-medium text-base-content">
+                  {card.User.name}
+                </span>
               </div>
             </Section>
           )}
@@ -283,7 +324,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
               {assignees.map((a) => (
                 <div key={a.id} className="group flex items-center gap-1.5">
                   <MemberAvatar member={a.User} size="sm" />
-                  <span className="text-sm font-medium text-base-content">{a.User.name}</span>
+                  <span className="text-sm font-medium text-base-content">
+                    {a.User.name}
+                  </span>
                   <button
                     type="button"
                     onClick={() => handleRemoveAssignee(a.User.id)}
@@ -308,10 +351,15 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
                     {boardMembers.filter(
                       (m) => !assignees.some((a) => a.User?.id === m.UserId),
                     ).length === 0 ? (
-                      <p className="px-4 py-2 text-xs text-base-content/40">All members assigned</p>
+                      <p className="px-4 py-2 text-xs text-base-content/40">
+                        All members assigned
+                      </p>
                     ) : (
                       boardMembers
-                        .filter((m) => !assignees.some((a) => a.User?.id === m.UserId))
+                        .filter(
+                          (m) =>
+                            !assignees.some((a) => a.User?.id === m.UserId),
+                        )
                         .map((m) => (
                           <button
                             key={m.id}
@@ -356,29 +404,39 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
                 disabled={description === savedDescription || saving}
                 onClick={handleSaveDescription}
               >
-                {saving ? <span className="loading loading-spinner loading-xs" /> : "Save"}
+                {saving ? (
+                  <span className="loading loading-spinner loading-xs" />
+                ) : (
+                  "Save"
+                )}
               </button>
             </div>
           </Section>
 
           {/* Checklists */}
-          <Section label={`Checklist (${completedChecklists}/${totalChecklists})`}>
+          <Section
+            label={`Checklist (${completedChecklists}/${totalChecklists})`}
+          >
             {checklists.length > 0 && (
               <>
                 <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-base-200">
                   <div
                     className="h-full rounded-full bg-primary transition-all"
                     style={{
-                      width: totalChecklists > 0
-                        ? `${(completedChecklists / totalChecklists) * 100}%`
-                        : "0%",
+                      width:
+                        totalChecklists > 0
+                          ? `${(completedChecklists / totalChecklists) * 100}%`
+                          : "0%",
                     }}
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   {checklists.map((item) => (
-                    <div key={item.id} className="flex items-center gap-2">
+                    <div
+                      key={item.id}
+                      className="group flex items-center gap-2"
+                    >
                       <input
                         type="checkbox"
                         checked={item.isCompleted}
@@ -388,11 +446,22 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
                       <input
                         type="text"
                         defaultValue={item.title}
-                        onBlur={(e) => handleChecklistTitleBlur(item, e.target.value)}
+                        onBlur={(e) =>
+                          handleChecklistTitleBlur(item, e.target.value)
+                        }
                         className={`flex-1 bg-transparent text-sm outline-none focus:border-b focus:border-base-300 ${
-                          item.isCompleted ? "line-through text-base-content/40" : "text-base-content"
+                          item.isCompleted
+                            ? "line-through text-base-content/40"
+                            : "text-base-content"
                         }`}
                       />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteChecklist(item)}
+                        className="hidden rounded-full border border-error px-2 py-0.5 text-xs font-bold text-error hover:bg-error hover:text-white group-hover:block"
+                      >
+                        Delete
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -400,7 +469,10 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
             )}
 
             {showChecklistForm ? (
-              <form onSubmit={handleAddChecklist} className="mt-3 flex items-center gap-2">
+              <form
+                onSubmit={handleAddChecklist}
+                className="mt-3 flex items-center gap-2"
+              >
                 <input
                   type="text"
                   autoFocus
@@ -414,12 +486,19 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
                   className="btn btn-primary btn-sm"
                   disabled={!newChecklistTitle.trim() || addingChecklist}
                 >
-                  {addingChecklist ? <span className="loading loading-spinner loading-xs" /> : "Add"}
+                  {addingChecklist ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : (
+                    "Add"
+                  )}
                 </button>
                 <button
                   type="button"
                   className="btn btn-ghost btn-sm"
-                  onClick={() => { setShowChecklistForm(false); setNewChecklistTitle(""); }}
+                  onClick={() => {
+                    setShowChecklistForm(false);
+                    setNewChecklistTitle("");
+                  }}
                 >
                   ✕
                 </button>
@@ -450,7 +529,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
                     <p className="mb-1 text-xs font-bold text-base-content/60">
                       {comment.User.name}
                     </p>
-                    <p className="text-sm leading-relaxed text-base-content">{comment.content}</p>
+                    <p className="text-sm leading-relaxed text-base-content">
+                      {comment.content}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -470,7 +551,11 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
                   className="btn btn-primary btn-sm"
                   disabled={!commentText.trim() || postingComment}
                 >
-                  {postingComment ? <span className="loading loading-spinner loading-xs" /> : "Post"}
+                  {postingComment ? (
+                    <span className="loading loading-spinner loading-xs" />
+                  ) : (
+                    "Post"
+                  )}
                 </button>
               </div>
             </form>
@@ -480,7 +565,11 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 
       {/* Footer */}
       <div className="modal-action pt-2">
-        <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
+        <button
+          type="button"
+          onClick={onClose}
+          className="btn btn-ghost btn-sm"
+        >
           Close
         </button>
       </div>
