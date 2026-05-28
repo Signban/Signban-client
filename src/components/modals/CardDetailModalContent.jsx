@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
+import Swal from "sweetalert2";
 import api from "../../services/api";
 import BoardService from "../../services/BoardService";
 import { CardPriority } from "../../constants/enums";
@@ -64,6 +66,7 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
   const [showAssigneePicker, setShowAssigneePicker] = useState(false);
   const [boardMembers, setBoardMembers] = useState([]);
   const [addingAssignee, setAddingAssignee] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchCard() {
@@ -228,6 +231,29 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
     }
   }
 
+  async function handleDeleteCard() {
+    const result = await Swal.fire({
+      title: "Delete this card?",
+      text: "This action cannot be undone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#ef4444",
+    });
+    if (!result.isConfirmed) return;
+    setDeleting(true);
+    try {
+      await BoardService.deleteCard(boardId, cardId);
+      onClose?.();
+    } catch (err) {
+      const msg =
+        err.response?.data?.message || err.message || "Failed to delete card";
+      toast.error(msg);
+      setDeleting(false);
+    }
+  }
+
   async function handleAddChecklist(e) {
     e.preventDefault();
     const trimmed = newChecklistTitle.trim();
@@ -246,6 +272,34 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 
   return (
     <div className="space-y-4">
+      <button
+        type="button"
+        onClick={handleDeleteCard}
+        disabled={deleting}
+        className="btn btn-circle btn-ghost absolute right-18 top-2 text-error hover:bg-error/10"
+        title="Delete card"
+      >
+        {deleting ? (
+          <span className="loading loading-spinner loading-xs" />
+        ) : (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          </svg>
+        )}
+      </button>
+
       {/* Cover */}
       {card.coverUrl && (
         <div className="-mx-6 -mt-6 mb-2 overflow-hidden rounded-t-3xl">
