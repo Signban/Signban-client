@@ -1,224 +1,401 @@
 import { useEffect, useState } from "react";
 import api from "../../services/api";
+import BoardService from "../../services/BoardService";
 import { CardPriority } from "../../constants/enums";
 
 const priorityStyle = {
-	[CardPriority.low]: "bg-success/10 text-success",
-	[CardPriority.medium]: "bg-primary/10 text-primary",
-	[CardPriority.high]: "bg-warning/10 text-warning",
-	[CardPriority.urgent]: "bg-error/10 text-error",
+  [CardPriority.low]: "bg-success/10 text-success",
+  [CardPriority.medium]: "bg-primary/10 text-primary",
+  [CardPriority.high]: "bg-warning/10 text-warning",
+  [CardPriority.urgent]: "bg-error/10 text-error",
 };
 
 function MemberAvatar({ member, size = "md" }) {
-	const sizeClass = size === "sm" ? "h-7 w-7 text-[11px]" : "h-9 w-9 text-sm";
-	const initial = member?.name?.charAt(0)?.toUpperCase() || "?";
-	const colorClass = member?.colorClass || "bg-primary";
+  const sizeClass = size === "sm" ? "h-7 w-7 text-[11px]" : "h-9 w-9 text-sm";
+  const initial = member?.name?.charAt(0)?.toUpperCase() || "?";
+  const colorClass = member?.colorClass || "bg-primary";
 
-	return (
-		<div
-			title={member.name}
-			className={`${sizeClass} inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-base-100 ${colorClass} font-black text-white`}
-		>
-			{member.avatarUrl ? (
-				<img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
-			) : (
-				<span className="block leading-none">{initial}</span>
-			)}
-		</div>
-	);
+  return (
+    <div
+      title={member.name}
+      className={`${sizeClass} inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-base-100 ${colorClass} font-black text-white`}
+    >
+      {member.avatarUrl ? (
+        <img src={member.avatarUrl} alt={member.name} className="h-full w-full object-cover" />
+      ) : (
+        <span className="block leading-none">{initial}</span>
+      )}
+    </div>
+  );
 }
 
 function Section({ label, children }) {
-	return (
-		<div>
-			<p className="mb-2 text-xs font-bold uppercase tracking-widest text-base-content/40">
-				{label}
-			</p>
-			{children}
-		</div>
-	);
+  return (
+    <div>
+      <p className="mb-2 text-xs font-bold uppercase tracking-widest text-base-content/40">
+        {label}
+      </p>
+      {children}
+    </div>
+  );
 }
 
 export default function CardDetailModalContent({ boardId, cardId, onClose }) {
-	const [card, setCard] = useState(null);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState(null);
+  const [card, setCard] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [description, setDescription] = useState("");
+  const [savedDescription, setSavedDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [priority, setPriority] = useState("");
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+  const [checklists, setChecklists] = useState([]);
+  const [showChecklistForm, setShowChecklistForm] = useState(false);
+  const [newChecklistTitle, setNewChecklistTitle] = useState("");
+  const [addingChecklist, setAddingChecklist] = useState(false);
 
-	useEffect(() => {
-		async function fetchCard() {
-			try {
-				setLoading(true);
-				const { data } = await api.get(`/boards/${boardId}/cards/${cardId}`);
-				setCard(data.card);
-			} catch (err) {
-				setError(err.response?.data?.message || "Failed to load card");
-			} finally {
-				setLoading(false);
-			}
-		}
+  useEffect(() => {
+    async function fetchCard() {
+      try {
+        setLoading(true);
+        const { data } = await api.get(`/boards/${boardId}/cards/${cardId}`);
+        setCard(data.card);
+        setDescription(data.card.description || "");
+        setSavedDescription(data.card.description || "");
+        setPriority(data.card.priority || CardPriority.medium);
+        setComments(data.card.Comments || []);
+        setChecklists(data.card.Checklists || []);
+      } catch (err) {
+        setError(err.response?.data?.message || "Failed to load card");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-		fetchCard();
-	}, [boardId, cardId]);
+    fetchCard();
+  }, [boardId, cardId]);
 
-	if (loading) {
-		return (
-			<div className="flex items-center justify-center py-16">
-				<span className="loading loading-spinner loading-lg text-primary" />
-			</div>
-		);
-	}
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <span className="loading loading-spinner loading-lg text-primary" />
+      </div>
+    );
+  }
 
-	if (error) {
-		return (
-			<div className="py-10 text-center">
-				<p className="text-sm font-medium text-error">{error}</p>
-				<button type="button" onClick={onClose} className="btn btn-ghost btn-sm mt-4">
-					Close
-				</button>
-			</div>
-		);
-	}
+  if (error) {
+    return (
+      <div className="py-10 text-center">
+        <p className="text-sm font-medium text-error">{error}</p>
+        <button type="button" onClick={onClose} className="btn btn-ghost btn-sm mt-4">
+          Close
+        </button>
+      </div>
+    );
+  }
 
-	const completedChecklists = card.Checklists?.filter((c) => c.isCompleted).length ?? 0;
-	const totalChecklists = card.Checklists?.length ?? 0;
-	const dueDateFormatted = card.dueDate
-		? new Date(card.dueDate).toLocaleDateString("id-ID", {
-				day: "numeric",
-				month: "long",
-				year: "numeric",
-		  })
-		: null;
+  const completedChecklists = checklists.filter((c) => c.isCompleted).length;
+  const totalChecklists = checklists.length;
+  const dueDateFormatted = card.dueDate
+    ? new Date(card.dueDate).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : null;
 
-	return (
-		<div className="space-y-6">
-			{/* Cover */}
-			{card.coverUrl && (
-				<div className="-mx-6 -mt-6 mb-2 overflow-hidden rounded-t-3xl">
-					<img
-						src={card.coverUrl}
-						alt="Card cover"
-						className="h-48 w-full object-cover"
-					/>
-				</div>
-			)}
+  async function handlePriorityChange(e) {
+    const newPriority = e.target.value;
+    setPriority(newPriority);
+    await BoardService.updateCard(boardId, cardId, { priority: newPriority });
+  }
 
-			{/* Title + Priority + Due Date */}
-			<div className="space-y-2">
-				<div className="flex flex-wrap items-center gap-2">
-					<span
-						className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${
-							priorityStyle[card.priority] || "bg-base-200 text-base-content"
-						}`}
-					>
-						{card.priority}
-					</span>
+  async function handleSaveDescription() {
+    setSaving(true);
+    try {
+      await BoardService.updateCard(boardId, cardId, { description });
+      setSavedDescription(description);
+    } finally {
+      setSaving(false);
+    }
+  }
 
-					{dueDateFormatted && (
-						<span className="rounded-full bg-base-200 px-2.5 py-1 text-xs font-medium text-base-content/60">
-							Due {dueDateFormatted}
-						</span>
-					)}
-				</div>
+  async function handlePostComment(e) {
+    e.preventDefault();
+    const trimmed = commentText.trim();
+    if (!trimmed) return;
+    setPostingComment(true);
+    try {
+      const data = await BoardService.createComment(boardId, cardId, { content: trimmed });
+      setComments((prev) => [...prev, data.comment]);
+      setCommentText("");
+    } finally {
+      setPostingComment(false);
+    }
+  }
 
-				<h2 className="text-xl font-black leading-snug text-base-content">{card.title}</h2>
-			</div>
+  async function handleChecklistToggle(item) {
+    const updated = { isCompleted: !item.isCompleted };
+    setChecklists((prev) =>
+      prev.map((c) => (c.id === item.id ? { ...c, ...updated } : c)),
+    );
+    try {
+      await BoardService.updateChecklist(boardId, cardId, item.id, updated);
+    } catch {
+      // revert on failure
+      setChecklists((prev) =>
+        prev.map((c) => (c.id === item.id ? { ...c, isCompleted: item.isCompleted } : c)),
+      );
+    }
+  }
 
-			{/* Creator */}
-			{card.User && (
-				<Section label="Created by">
-					<div className="flex items-center gap-2">
-						<MemberAvatar member={card.User} size="sm" />
-						<span className="text-sm font-medium text-base-content">{card.User.name}</span>
-					</div>
-				</Section>
-			)}
+  async function handleChecklistTitleBlur(item, newTitle) {
+    const trimmed = newTitle.trim();
+    if (!trimmed || trimmed === item.title) return;
+    setChecklists((prev) =>
+      prev.map((c) => (c.id === item.id ? { ...c, title: trimmed } : c)),
+    );
+    try {
+      await BoardService.updateChecklist(boardId, cardId, item.id, { title: trimmed });
+    } catch {
+      setChecklists((prev) =>
+        prev.map((c) => (c.id === item.id ? { ...c, title: item.title } : c)),
+      );
+    }
+  }
 
-			{/* Assignees */}
-			{card.CardAssignees?.length > 0 && (
-				<Section label="Assignees">
-					<div className="flex flex-wrap items-center gap-2">
-						{card.CardAssignees.map((a) => (
-							<div key={a.id} className="flex items-center gap-1.5">
-								<MemberAvatar member={a.User} size="sm" />
-								<span className="text-sm font-medium text-base-content">{a.User.name}</span>
-							</div>
-						))}
-					</div>
-				</Section>
-			)}
+  async function handleAddChecklist(e) {
+    e.preventDefault();
+    const trimmed = newChecklistTitle.trim();
+    if (!trimmed) return;
+    setAddingChecklist(true);
+    try {
+      const data = await BoardService.createChecklist(boardId, cardId, { title: trimmed });
+      setChecklists((prev) => [...prev, data.checklist]);
+      setNewChecklistTitle("");
+      setShowChecklistForm(false);
+    } finally {
+      setAddingChecklist(false);
+    }
+  }
 
-			{/* Description */}
-			{card.description && (
-				<Section label="Description">
-					<p className="whitespace-pre-wrap text-sm leading-relaxed text-base-content/80">
-						{card.description}
-					</p>
-				</Section>
-			)}
+  return (
+    <div className="space-y-4">
+      {/* Cover */}
+      {card.coverUrl && (
+        <div className="-mx-6 -mt-6 mb-2 overflow-hidden rounded-t-3xl">
+          <img src={card.coverUrl} alt="Card cover" className="h-48 w-full object-cover" />
+        </div>
+      )}
 
-			{/* Checklists */}
-			{card.Checklists?.length > 0 && (
-				<Section label={`Checklist (${completedChecklists}/${totalChecklists})`}>
-					<div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-base-200">
-						<div
-							className="h-full rounded-full bg-primary transition-all"
-							style={{
-								width: totalChecklists > 0 ? `${(completedChecklists / totalChecklists) * 100}%` : "0%",
-							}}
-						/>
-					</div>
+      {/* Title + Generate Checklist — inline */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={priority}
+              onChange={handlePriorityChange}
+              className={`rounded-full border-0 px-2.5 py-1 text-xs font-bold capitalize outline-none ${
+                priorityStyle[priority] || "bg-base-200 text-base-content"
+              }`}
+            >
+              {Object.values(CardPriority).map((p) => (
+                <option key={p} value={p} className="bg-base-100 text-base-content normal-case">
+                  {p}
+                </option>
+              ))}
+            </select>
 
-					<div className="space-y-1.5">
-						{card.Checklists.map((item) => (
-							<div key={item.id} className="flex items-center gap-2">
-								<input
-									type="checkbox"
-									checked={item.isCompleted}
-									readOnly
-									className="checkbox checkbox-primary checkbox-sm"
-								/>
-								<span
-									className={`text-sm ${
-										item.isCompleted
-											? "line-through text-base-content/40"
-											: "text-base-content"
-									}`}
-								>
-									{item.title}
-								</span>
-							</div>
-						))}
-					</div>
-				</Section>
-			)}
+            {dueDateFormatted && (
+              <span className="rounded-full bg-base-200 px-2.5 py-1 text-xs font-medium text-base-content/60">
+                Due {dueDateFormatted}
+              </span>
+            )}
+          </div>
 
-			{/* Comments */}
-			{card.Comments?.length > 0 && (
-				<Section label={`Comments (${card.Comments.length})`}>
-					<div className="space-y-3">
-						{card.Comments.map((comment) => (
-							<div key={comment.id} className="flex gap-3">
-								<MemberAvatar member={comment.User} size="sm" />
-								<div className="flex-1 rounded-2xl bg-base-200/60 px-4 py-3">
-									<p className="mb-1 text-xs font-bold text-base-content/60">
-										{comment.User.name}
-									</p>
-									<p className="text-sm leading-relaxed text-base-content">
-										{comment.content}
-									</p>
-								</div>
-							</div>
-						))}
-					</div>
-				</Section>
-			)}
+          <h2 className="text-xl font-black leading-snug text-base-content">{card.title}</h2>
+        </div>
 
-			{/* Footer */}
-			<div className="modal-action pt-2">
-				<button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
-					Close
-				</button>
-			</div>
-		</div>
-	);
+        <button type="button" className="btn btn-outline btn-sm shrink-0">
+          ✦ Generate Checklist
+        </button>
+      </div>
+
+      {/* 2-column body */}
+      <div className="grid grid-cols-1 gap-0 md:grid-cols-[2fr_1px_1fr]">
+        {/* Left column */}
+        <div className="space-y-5 md:pr-6">
+          {/* Creator */}
+          {card.User && (
+            <Section label="Created by">
+              <div className="flex items-center gap-2">
+                <MemberAvatar member={card.User} size="sm" />
+                <span className="text-sm font-medium text-base-content">{card.User.name}</span>
+              </div>
+            </Section>
+          )}
+
+          {/* Assignees */}
+          <Section label="Assignees">
+            <div className="flex flex-wrap items-center gap-2">
+              {card.CardAssignees?.map((a) => (
+                <div key={a.id} className="flex items-center gap-1.5">
+                  <MemberAvatar member={a.User} size="sm" />
+                  <span className="text-sm font-medium text-base-content">{a.User.name}</span>
+                </div>
+              ))}
+              <button type="button" className="btn btn-outline btn-xs rounded-full">
+                + Add Assignee
+              </button>
+            </div>
+          </Section>
+
+          {/* Description */}
+          <Section label="Description">
+            <textarea
+              className="textarea textarea-bordered w-full text-sm leading-relaxed"
+              rows={4}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Add a description..."
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                disabled={description === savedDescription || saving}
+                onClick={handleSaveDescription}
+              >
+                {saving ? <span className="loading loading-spinner loading-xs" /> : "Save"}
+              </button>
+            </div>
+          </Section>
+
+          {/* Checklists */}
+          <Section label={`Checklist (${completedChecklists}/${totalChecklists})`}>
+            {checklists.length > 0 && (
+              <>
+                <div className="mb-2 h-2 w-full overflow-hidden rounded-full bg-base-200">
+                  <div
+                    className="h-full rounded-full bg-primary transition-all"
+                    style={{
+                      width: totalChecklists > 0
+                        ? `${(completedChecklists / totalChecklists) * 100}%`
+                        : "0%",
+                    }}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  {checklists.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={item.isCompleted}
+                        onChange={() => handleChecklistToggle(item)}
+                        className="checkbox checkbox-primary checkbox-sm shrink-0"
+                      />
+                      <input
+                        type="text"
+                        defaultValue={item.title}
+                        onBlur={(e) => handleChecklistTitleBlur(item, e.target.value)}
+                        className={`flex-1 bg-transparent text-sm outline-none focus:border-b focus:border-base-300 ${
+                          item.isCompleted ? "line-through text-base-content/40" : "text-base-content"
+                        }`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {showChecklistForm ? (
+              <form onSubmit={handleAddChecklist} className="mt-3 flex items-center gap-2">
+                <input
+                  type="text"
+                  autoFocus
+                  className="input input-bordered input-sm flex-1 text-sm"
+                  placeholder="Checklist item title..."
+                  value={newChecklistTitle}
+                  onChange={(e) => setNewChecklistTitle(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  disabled={!newChecklistTitle.trim() || addingChecklist}
+                >
+                  {addingChecklist ? <span className="loading loading-spinner loading-xs" /> : "Add"}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => { setShowChecklistForm(false); setNewChecklistTitle(""); }}
+                >
+                  ✕
+                </button>
+              </form>
+            ) : (
+              <button
+                type="button"
+                className="mt-3 text-xs font-bold text-primary hover:underline"
+                onClick={() => setShowChecklistForm(true)}
+              >
+                + Add item
+              </button>
+            )}
+          </Section>
+        </div>
+
+        {/* Divider */}
+        <div className="hidden w-px self-stretch bg-base-300 md:block" />
+
+        {/* Right column — Comments */}
+        <div className="flex flex-col gap-4 md:pl-6">
+          <Section label={`Comments (${comments.length})`}>
+            <div className="space-y-3">
+              {comments.map((comment) => (
+                <div key={comment.id} className="flex gap-3">
+                  <MemberAvatar member={comment.User} size="sm" />
+                  <div className="flex-1 rounded-2xl bg-base-200/60 px-4 py-3">
+                    <p className="mb-1 text-xs font-bold text-base-content/60">
+                      {comment.User.name}
+                    </p>
+                    <p className="text-sm leading-relaxed text-base-content">{comment.content}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handlePostComment} className="mt-4 space-y-2">
+              <textarea
+                className="textarea textarea-bordered w-full text-sm"
+                rows={3}
+                placeholder="Write a comment..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+              />
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-sm"
+                  disabled={!commentText.trim() || postingComment}
+                >
+                  {postingComment ? <span className="loading loading-spinner loading-xs" /> : "Post"}
+                </button>
+              </div>
+            </form>
+          </Section>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="modal-action pt-2">
+        <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">
+          Close
+        </button>
+      </div>
+    </div>
+  );
 }
