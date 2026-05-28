@@ -16,15 +16,11 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         {/* </Route> */}
 
-        {/* <Route element={<MainLayout />}> */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<BoardPage />} />
-        <Route path="/dashboard/detail" element={<BoardDetailPage />} />
-        <Route
-          path="/dashboard/detail/:boardId/card/:cardId"
-          element={<CardDetailModalContent />}
-        />
-        {/* </Route> */}
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<BoardPage />} />
+          <Route path="/dashboard/:id" element={<BoardDetailPage />} />
+        </Route>
 
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
