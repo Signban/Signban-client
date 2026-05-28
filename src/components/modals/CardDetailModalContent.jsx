@@ -48,6 +48,7 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
   const [savedDescription, setSavedDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [priority, setPriority] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState("");
   const [postingComment, setPostingComment] = useState(false);
@@ -65,6 +66,7 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
         setDescription(data.card.description || "");
         setSavedDescription(data.card.description || "");
         setPriority(data.card.priority || CardPriority.medium);
+        setDueDate(data.card.dueDate ? data.card.dueDate.slice(0, 10) : "");
         setComments(data.card.Comments || []);
         setChecklists(data.card.Checklists || []);
       } catch (err) {
@@ -98,18 +100,17 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 
   const completedChecklists = checklists.filter((c) => c.isCompleted).length;
   const totalChecklists = checklists.length;
-  const dueDateFormatted = card.dueDate
-    ? new Date(card.dueDate).toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : null;
 
   async function handlePriorityChange(e) {
     const newPriority = e.target.value;
     setPriority(newPriority);
     await BoardService.updateCard(boardId, cardId, { priority: newPriority });
+  }
+
+  async function handleDueDateChange(e) {
+    const newDate = e.target.value;
+    setDueDate(newDate);
+    await BoardService.updateCard(boardId, cardId, { dueDate: newDate || null });
   }
 
   async function handleSaveDescription() {
@@ -172,8 +173,9 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
     if (!trimmed) return;
     setAddingChecklist(true);
     try {
-      const data = await BoardService.createChecklist(boardId, cardId, { title: trimmed });
-      setChecklists((prev) => [...prev, data.checklist]);
+      await BoardService.createChecklist(boardId, cardId, { title: trimmed });
+      const { data } = await api.get(`/boards/${boardId}/cards/${cardId}`);
+      setChecklists(data.card.Checklists || []);
       setNewChecklistTitle("");
       setShowChecklistForm(false);
     } finally {
@@ -208,11 +210,15 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
               ))}
             </select>
 
-            {dueDateFormatted && (
-              <span className="rounded-full bg-base-200 px-2.5 py-1 text-xs font-medium text-base-content/60">
-                Due {dueDateFormatted}
-              </span>
-            )}
+            <label className="flex items-center gap-1.5 rounded-full bg-base-200 px-2.5 py-1">
+              <span className="text-xs font-medium text-base-content/40">Due</span>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={handleDueDateChange}
+                className="bg-transparent text-xs font-medium text-base-content/60 outline-none"
+              />
+            </label>
           </div>
 
           <h2 className="text-xl font-black leading-snug text-base-content">{card.title}</h2>
