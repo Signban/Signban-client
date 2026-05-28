@@ -4,106 +4,119 @@ import AuthService from "../services/AuthService";
 const AuthContext = createContext(null);
 
 async function getCurrentUser() {
-	const response = await AuthService.currentUser();
-	return response;
+  const response = await AuthService.currentUser();
+  return response;
 }
 
 export function AuthProvider({ children }) {
-	const [accessToken, setAccessToken] = useState(() =>
-		localStorage.getItem("access_token"),
-	);
-	const [currentUser, setCurrentUser] = useState(null);
-	const [loading, setLoading] = useState(false);
-	const [loadingUser, setLoadingUser] = useState(true);
+  const [accessToken, setAccessToken] = useState(() =>
+    localStorage.getItem("access_token"),
+  );
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-	const isAuthenticated = Boolean(accessToken);
+  const isAuthenticated = Boolean(accessToken);
 
-	const clearSession = () => {
-		localStorage.removeItem("access_token");
-		setAccessToken(null);
-		setCurrentUser(null);
-	};
+  const clearSession = () => {
+    localStorage.removeItem("access_token");
+    setAccessToken(null);
+    setCurrentUser(null);
+  };
 
-	const fetchCurrentUser = async () => {
-		try {
-			setLoadingUser(true);
+  const fetchCurrentUser = async () => {
+    try {
+      setLoadingUser(true);
 
-			if (!localStorage.getItem("access_token")) {
-				setCurrentUser(null);
-				return;
-			}
+      if (!localStorage.getItem("access_token")) {
+        setCurrentUser(null);
+        return;
+      }
 
-			const user = await getCurrentUser();
-			setCurrentUser(user);
-		} catch (error) {
-			console.log(error);
-			clearSession();
-		} finally {
-			setLoadingUser(false);
-		}
-	};
+      const user = await getCurrentUser();
+      setCurrentUser(user);
+    } catch (error) {
+      console.log(error);
+      clearSession();
+    } finally {
+      setLoadingUser(false);
+    }
+  };
 
-	const saveSession = async (token) => {
-		localStorage.setItem("access_token", token);
-		setAccessToken(token);
+  const saveSession = async (token) => {
+    localStorage.setItem("access_token", token);
+    setAccessToken(token);
 
-		const user = await getCurrentUser();
-		setCurrentUser(user);
-	};
+    const user = await getCurrentUser();
+    setCurrentUser(user);
+  };
 
-	const login = async (payload) => {
-		try {
-			setLoading(true);
-			const response = await AuthService.login(payload);
+  const login = async (payload) => {
+    try {
+      setLoading(true);
+      const response = await AuthService.login(payload);
 
-			await saveSession(response.access_token);
+      await saveSession(response.access_token);
 
-			return response;
-		} finally {
-			setLoading(false);
-		}
-	};
+      return response;
+    } finally {
+      setLoading(false);
+    }
+  };
+  const loginGoogle = async (payload) => {
+    try {
+      setLoading(true);
+      const response = await AuthService.googleLogin(payload);
 
-	const logout = () => {
-		clearSession();
-	};
+      await saveSession(response.access_token);
 
-	useEffect(() => {
-		fetchCurrentUser();
-	}, []);
+      return response;
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	useEffect(() => {
-		const handleUnauthorized = () => clearSession();
-		window.addEventListener("auth:unauthorized", handleUnauthorized);
+  const logout = () => {
+    clearSession();
+  };
 
-		return () => {
-			window.removeEventListener("auth:unauthorized", handleUnauthorized);
-		};
-	}, []);
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
 
-	const value = useMemo(
-		() => ({
-			accessToken,
-			currentUser,
-			isAuthenticated,
-			loading,
-			loadingUser,
-			login,
-			logout,
-			fetchCurrentUser,
-		}),
-		[accessToken, currentUser, isAuthenticated, loading, loadingUser],
-	);
+  useEffect(() => {
+    const handleUnauthorized = () => clearSession();
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
 
-	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return () => {
+      window.removeEventListener("auth:unauthorized", handleUnauthorized);
+    };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      accessToken,
+      currentUser,
+      isAuthenticated,
+      loading,
+      loadingUser,
+      login,
+      logout,
+      loginGoogle,
+      fetchCurrentUser,
+    }),
+    [accessToken, currentUser, isAuthenticated, loading, loadingUser],
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-	const context = useContext(AuthContext);
+  const context = useContext(AuthContext);
 
-	if (!context) {
-		throw new Error("useAuth must be used inside AuthProvider");
-	}
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
 
-	return context;
+  return context;
 }

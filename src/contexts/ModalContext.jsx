@@ -20,13 +20,20 @@ const initialModal = {
 	showCloseButton: true,
 	closeOnBackdrop: true,
 	className: "",
+	onClose: null,
 };
 
 export function ModalProvider({ children }) {
 	const [modalState, setModalState] = useState(initialModal);
 
 	const close = () => {
+		const callback = modalState.onClose;
+
 		setModalState(initialModal);
+
+		if (typeof callback === "function") {
+			callback();
+		}
 	};
 
 	const open = ({
@@ -37,6 +44,7 @@ export function ModalProvider({ children }) {
 		showCloseButton = true,
 		closeOnBackdrop = true,
 		className = "",
+		onClose = null,
 	} = {}) => {
 		setModalState({
 			open: true,
@@ -47,6 +55,7 @@ export function ModalProvider({ children }) {
 			showCloseButton,
 			closeOnBackdrop,
 			className,
+			onClose,
 		});
 	};
 
@@ -98,7 +107,9 @@ export function ModalProvider({ children }) {
 
 						{modalContent}
 
-						{modalActions ? <div className="modal-action">{modalActions}</div> : null}
+						{modalActions ? (
+							<div className="modal-action">{modalActions}</div>
+						) : null}
 					</div>
 
 					<div
