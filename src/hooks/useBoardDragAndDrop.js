@@ -66,27 +66,10 @@ export default function useBoardDragAndDrop({
 
 			const activeData = active.data.current;
 
-			// Preview tuker posisi LIST saat drag
-			if (activeData?.type === "list") {
-				const activeListId = Number(String(active.id).replace("list-", ""));
-				const overList = findListByDndId(lists, over.id);
+			// Untuk list, jangan reorder manual di dragOver.
+			// Bayangan tuker posisi sudah di-handle oleh SortableContext.
+			if (activeData?.type === "list") return;
 
-				if (!overList) return;
-
-				const oldIndex = lists.findIndex((list) => list.id === activeListId);
-				const newIndex = lists.findIndex((list) => list.id === overList.id);
-
-				if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
-
-				setBoard((prevBoard) => ({
-					...prevBoard,
-					lists: arrayMove(prevBoard.lists, oldIndex, newIndex),
-				}));
-
-				return;
-			}
-
-			// Preview pindah CARD antar list
 			if (activeData?.type !== "card") return;
 
 			const activeCardId = Number(String(active.id).replace("card-", ""));

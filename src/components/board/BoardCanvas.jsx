@@ -1,8 +1,5 @@
-import {
-	closestCorners,
-	DndContext,
-	DragOverlay,
-} from "@dnd-kit/core";
+import { useCallback } from "react";
+import { closestCorners, DndContext, DragOverlay } from "@dnd-kit/core";
 import {
 	horizontalListSortingStrategy,
 	SortableContext,
@@ -21,11 +18,26 @@ export default function BoardCanvas({
 	onDragOver,
 	onDragEnd,
 }) {
+	const collisionDetection = useCallback((args) => {
+		const activeType = args.active?.data?.current?.type;
+
+		if (activeType === "list") {
+			return closestCorners({
+				...args,
+				droppableContainers: args.droppableContainers.filter(
+					(container) => container.data?.current?.type === "list",
+				),
+			});
+		}
+
+		return closestCorners(args);
+	}, []);
+
 	return (
 		<main className="min-h-0 flex-1 overflow-hidden">
 			<DndContext
 				sensors={sensors}
-				collisionDetection={closestCorners}
+				collisionDetection={collisionDetection}
 				onDragStart={onDragStart}
 				onDragOver={onDragOver}
 				onDragEnd={onDragEnd}
