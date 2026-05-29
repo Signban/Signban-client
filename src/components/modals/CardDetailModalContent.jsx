@@ -3,7 +3,9 @@ import { toast } from "react-toastify";
 import Swal from "sweetalert2";
 import api from "../../services/api";
 import BoardService from "../../services/BoardService";
+import socket from "../../services/Socket";
 import { CardPriority } from "../../constants/enums";
+import { useAuth } from "../../contexts/AuthContext";
 
 const priorityStyle = {
 	[CardPriority.low]: "bg-success/10 text-success",
@@ -46,8 +48,16 @@ function Section({ label, children }) {
 	);
 }
 
-export default function CardDetailModalContent({ boardId, cardId, onClose }) {
+export default function CardDetailModalContent({
+	boardId,
+	cardId,
+	onClose,
+	onCardUpdated,
+}) {
 	const coverInputRef = useRef(null);
+	const typingStopTimerRef = useRef(null);
+	const isTypingRef = useRef(false);
+	const { currentUser } = useAuth();
 
 	const [card, setCard] = useState(null);
 	const [loading, setLoading] = useState(true);
@@ -60,6 +70,7 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 	const [comments, setComments] = useState([]);
 	const [commentText, setCommentText] = useState("");
 	const [postingComment, setPostingComment] = useState(false);
+	const [typingUserName, setTypingUserName] = useState("");
 	const [checklists, setChecklists] = useState([]);
 	const [showChecklistForm, setShowChecklistForm] = useState(false);
 	const [newChecklistTitle, setNewChecklistTitle] = useState("");
@@ -72,19 +83,61 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 	const [uploadingCover, setUploadingCover] = useState(false);
 	const [generatingAI, setGeneratingAI] = useState(false);
 
+	function applyCardData(nextCard) {
+		if (!nextCard) return;
+
+		setCard(nextCard);
+		setDescription(nextCard.description || "");
+		setSavedDescription(nextCard.description || "");
+		setPriority(nextCard.priority || CardPriority.medium);
+		setDueDate(nextCard.dueDate ? nextCard.dueDate.slice(0, 10) : "");
+		setComments(nextCard.Comments || []);
+		setChecklists(nextCard.Checklists || []);
+		setAssignees(nextCard.CardAssignees || []);
+	}
+
+	function syncFromResponse(data) {
+		if (!data) return;
+		if (data.card) applyCardData(data.card);
+		if (data.board) onCardUpdated?.(data);
+	}
+
+	function emitTypingStop() {
+		if (!isTypingRef.current || !boardId || !cardId) return;
+		isTypingRef.current = false;
+		socket.emit("comment:typing-stop", { boardId, cardId });
+	}
+
+	function handleCommentTextChange(e) {
+		const value = e.target.value;
+		setCommentText(value);
+
+		if (!boardId || !cardId) return;
+
+		if (value.trim() && !isTypingRef.current) {
+			isTypingRef.current = true;
+			socket.emit("comment:typing-start", {
+				boardId,
+				cardId,
+				userName: currentUser?.name || currentUser?.email || "Someone",
+			});
+		}
+
+		if (!value.trim()) {
+			emitTypingStop();
+			return;
+		}
+
+		clearTimeout(typingStopTimerRef.current);
+		typingStopTimerRef.current = setTimeout(emitTypingStop, 1200);
+	}
+
 	useEffect(() => {
 		async function fetchCard() {
 			try {
 				setLoading(true);
 				const { data } = await api.get(`/boards/${boardId}/cards/${cardId}`);
-				setCard(data.card);
-				setDescription(data.card.description || "");
-				setSavedDescription(data.card.description || "");
-				setPriority(data.card.priority || CardPriority.medium);
-				setDueDate(data.card.dueDate ? data.card.dueDate.slice(0, 10) : "");
-				setComments(data.card.Comments || []);
-				setChecklists(data.card.Checklists || []);
-				setAssignees(data.card.CardAssignees || []);
+				applyCardData(data.card);
 			} catch (err) {
 				setError(err.response?.data?.message || "Failed to load card");
 			} finally {
@@ -94,6 +147,65 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 
 		fetchCard();
 	}, [boardId, cardId]);
+
+	useEffect(() => {
+		if (!boardId || !cardId) return;
+
+		if (!socket.connected) {
+			socket.connect();
+		}
+
+		socket.emit("board:join", boardId);
+
+		const syncCardFromSocket = (payload) => {
+			if (Number(payload?.cardId) !== Number(cardId)) return;
+			if (payload.card) applyCardData(payload.card);
+		};
+
+		const handleCardDeleted = (payload) => {
+			if (Number(payload?.cardId) !== Number(cardId)) return;
+			onCardUpdated?.(payload);
+			onClose?.();
+		};
+
+		const handleTypingStart = (payload) => {
+			if (Number(payload?.cardId) !== Number(cardId)) return;
+			setTypingUserName(payload.userName || "Someone");
+		};
+
+		const handleTypingStop = (payload) => {
+			if (Number(payload?.cardId) !== Number(cardId)) return;
+			setTypingUserName("");
+		};
+
+		const cardSyncEvents = [
+			"card:updated",
+			"card:assigned",
+			"card:unassigned",
+			"comment:created",
+			"checklist:created",
+			"checklist:updated",
+			"checklist:deleted",
+		];
+
+		cardSyncEvents.forEach((eventName) => {
+			socket.on(eventName, syncCardFromSocket);
+		});
+		socket.on("card:deleted", handleCardDeleted);
+		socket.on("comment:typing-start", handleTypingStart);
+		socket.on("comment:typing-stop", handleTypingStop);
+
+		return () => {
+			clearTimeout(typingStopTimerRef.current);
+			emitTypingStop();
+			cardSyncEvents.forEach((eventName) => {
+				socket.off(eventName, syncCardFromSocket);
+			});
+			socket.off("card:deleted", handleCardDeleted);
+			socket.off("comment:typing-start", handleTypingStart);
+			socket.off("comment:typing-stop", handleTypingStop);
+		};
+	}, [boardId, cardId, onCardUpdated, onClose]);
 
 	if (loading) {
 		return (
@@ -124,22 +236,25 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 	async function handlePriorityChange(e) {
 		const newPriority = e.target.value;
 		setPriority(newPriority);
-		await BoardService.updateCard(boardId, cardId, { priority: newPriority });
+		const data = await BoardService.updateCard(boardId, cardId, { priority: newPriority });
+		syncFromResponse(data);
 	}
 
 	async function handleDueDateChange(e) {
 		const newDate = e.target.value;
 		setDueDate(newDate);
-		await BoardService.updateCard(boardId, cardId, {
+		const data = await BoardService.updateCard(boardId, cardId, {
 			dueDate: newDate || null,
 		});
+		syncFromResponse(data);
 	}
 
 	async function handleSaveDescription() {
 		setSaving(true);
 		try {
-			await BoardService.updateCard(boardId, cardId, { description });
+			const data = await BoardService.updateCard(boardId, cardId, { description });
 			setSavedDescription(description);
+			syncFromResponse(data);
 		} finally {
 			setSaving(false);
 		}
@@ -159,7 +274,7 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 				cardId,
 				formData,
 			);
-			setCard((prev) => ({ ...prev, ...(data.card || {}) }));
+			syncFromResponse(data);
 			toast.success("Cover image updated successfully");
 		} catch (err) {
 			toast.error(
@@ -177,10 +292,11 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 		if (!trimmed) return;
 		setPostingComment(true);
 		try {
+			emitTypingStop();
 			const data = await BoardService.createComment(boardId, cardId, {
 				content: trimmed,
 			});
-			setComments((prev) => [...prev, data.comment]);
+			syncFromResponse(data);
 			setCommentText("");
 		} finally {
 			setPostingComment(false);
@@ -193,7 +309,8 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 			prev.map((c) => (c.id === item.id ? { ...c, ...updated } : c)),
 		);
 		try {
-			await BoardService.updateChecklist(boardId, cardId, item.id, updated);
+			const data = await BoardService.updateChecklist(boardId, cardId, item.id, updated);
+			syncFromResponse(data);
 		} catch {
 			setChecklists((prev) =>
 				prev.map((c) =>
@@ -210,9 +327,10 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 			prev.map((c) => (c.id === item.id ? { ...c, title: trimmed } : c)),
 		);
 		try {
-			await BoardService.updateChecklist(boardId, cardId, item.id, {
+			const data = await BoardService.updateChecklist(boardId, cardId, item.id, {
 				title: trimmed,
 			});
+			syncFromResponse(data);
 		} catch {
 			setChecklists((prev) =>
 				prev.map((c) => (c.id === item.id ? { ...c, title: item.title } : c)),
@@ -223,7 +341,8 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 	async function handleDeleteChecklist(item) {
 		setChecklists((prev) => prev.filter((c) => c.id !== item.id));
 		try {
-			await BoardService.deleteChecklist(boardId, cardId, item.id);
+			const data = await BoardService.deleteChecklist(boardId, cardId, item.id);
+			syncFromResponse(data);
 		} catch {
 			setChecklists((prev) => [...prev, item]);
 		}
@@ -240,9 +359,8 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 	async function handleAddAssignee(member) {
 		setAddingAssignee(true);
 		try {
-			await BoardService.addAssignee(boardId, cardId, member.UserId);
-			const { data } = await api.get(`/boards/${boardId}/cards/${cardId}`);
-			setAssignees(data.card.CardAssignees || []);
+			const data = await BoardService.addAssignee(boardId, cardId, member.UserId);
+			syncFromResponse(data);
 			setShowAssigneePicker(false);
 		} finally {
 			setAddingAssignee(false);
@@ -251,10 +369,8 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 
 	async function handleRemoveAssignee(userId) {
 		try {
-			await BoardService.removeAssignee(boardId, cardId, userId);
-			setAssignees((prev) =>
-				prev.filter((a) => a.UserId !== userId && a.User?.id !== userId),
-			);
+			const data = await BoardService.removeAssignee(boardId, cardId, userId);
+			syncFromResponse(data);
 		} catch {
 			// silently ignore
 		}
@@ -273,7 +389,8 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 		if (!result.isConfirmed) return;
 		setDeleting(true);
 		try {
-			await BoardService.deleteCard(boardId, cardId);
+			const data = await BoardService.deleteCard(boardId, cardId);
+			onCardUpdated?.(data);
 			onClose?.();
 		} catch (err) {
 			const msg =
@@ -287,15 +404,7 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 		setGeneratingAI(true);
 		try {
 			const data = await BoardService.generateChecklistWithAI(boardId, cardId);
-			setChecklists(data.checklists || []);
-			if (data.checklists?.[0]?.Card?.priority) {
-				setPriority(data.checklists[0].Card.priority);
-			}
-			const { data: refreshed } = await api.get(
-				`/boards/${boardId}/cards/${cardId}`,
-			);
-			setChecklists(refreshed.card.Checklists || []);
-			setPriority(refreshed.card.priority || priority);
+			syncFromResponse(data);
 			toast.success("Checklist has been generated successfully");
 		} catch (err) {
 			toast.error(
@@ -312,9 +421,8 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 		if (!trimmed) return;
 		setAddingChecklist(true);
 		try {
-			await BoardService.createChecklist(boardId, cardId, { title: trimmed });
-			const { data } = await api.get(`/boards/${boardId}/cards/${cardId}`);
-			setChecklists(data.card.Checklists || []);
+			const data = await BoardService.createChecklist(boardId, cardId, { title: trimmed });
+			syncFromResponse(data);
 			setNewChecklistTitle("");
 			setShowChecklistForm(false);
 		} finally {
@@ -658,13 +766,19 @@ export default function CardDetailModalContent({ boardId, cardId, onClose }) {
 							))}
 						</div>
 
+						{typingUserName && (
+							<p className="mt-3 text-xs font-medium italic text-base-content/40">
+								{typingUserName} is typing...
+							</p>
+						)}
+
 						<form onSubmit={handlePostComment} className="mt-4 space-y-2">
 							<textarea
 								className="textarea textarea-bordered w-full text-sm"
 								rows={3}
 								placeholder="Write a comment..."
 								value={commentText}
-								onChange={(e) => setCommentText(e.target.value)}
+								onChange={handleCommentTextChange}
 							/>
 							<div className="flex justify-end">
 								<button
