@@ -59,18 +59,18 @@ export default function RegisterPage() {
                 </div>
 
                 <h1 className="mb-5 text-5xl font-bold leading-tight">
-                  Realtime Kanban untuk kerja tim yang lebih rapi
+                  Realtime Kanban for better team collaboration
                 </h1>
 
                 <p className="text-lg leading-relaxed text-white/80">
-                  Kelola board, list, card, checklist, komentar, dan aktivitas
-                  tim secara realtime dalam satu workspace.
+                  Manage boards, lists, cards, checklists, comments, and team
+                  activity in real time — all in one workspace.
                 </p>
 
                 <div className="mt-8 grid grid-cols-1 gap-3 text-sm text-white/90">
                   <div className="flex items-center gap-3">
                     <span className="badge badge-success badge-sm"></span>
-                    <span>Board collaboration realtime</span>
+                    <span>Real-time board collaboration</span>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -80,7 +80,7 @@ export default function RegisterPage() {
 
                   <div className="flex items-center gap-3">
                     <span className="badge badge-info badge-sm"></span>
-                    <span>AI checklist dan priority suggestion</span>
+                    <span>AI checklist and priority suggestions</span>
                   </div>
                 </div>
               </div>
@@ -100,7 +100,7 @@ export default function RegisterPage() {
                 </h2>
 
                 <p className="mt-3 text-base-content/60">
-                  Buat akun baru untuk mulai menggunakan Signban.
+                  Create a new account to get started with Signban.
                 </p>
               </div>
 
