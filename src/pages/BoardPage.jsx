@@ -180,7 +180,7 @@ export default function BoardPage() {
 	};
 
 	const handleOpenBoard = (board) => {
-		navigate(`/dashboard/${board.id}`);
+		navigate(`/board/${board.id}`);
 	};
 
 	const handleDeleteBoard = () => {
