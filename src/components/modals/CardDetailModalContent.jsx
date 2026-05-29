@@ -82,6 +82,8 @@ export default function CardDetailModalContent({
 	const [deleting, setDeleting] = useState(false);
 	const [uploadingCover, setUploadingCover] = useState(false);
 	const [generatingAI, setGeneratingAI] = useState(false);
+	const [editingTitle, setEditingTitle] = useState(false);
+	const [titleValue, setTitleValue] = useState("");
 
 	function applyCardData(nextCard) {
 		if (!nextCard) return;
@@ -400,6 +402,31 @@ export default function CardDetailModalContent({
 		}
 	}
 
+	function handleTitleClick() {
+		setTitleValue(card.title);
+		setEditingTitle(true);
+	}
+
+	async function handleTitleBlur() {
+		const trimmed = titleValue.trim();
+		setEditingTitle(false);
+		if (!trimmed || trimmed === card.title) return;
+		try {
+			const data = await BoardService.updateCard(boardId, cardId, { title: trimmed });
+			syncFromResponse(data);
+		} catch (err) {
+			toast.error(err.response?.data?.message || "Failed to update title");
+		}
+	}
+
+	function handleTitleKeyDown(e) {
+		if (e.key === "Enter") e.target.blur();
+		if (e.key === "Escape") {
+			setTitleValue(card.title);
+			setEditingTitle(false);
+		}
+	}
+
 	async function handleGenerateWithAI() {
 		setGeneratingAI(true);
 		try {
@@ -520,9 +547,25 @@ export default function CardDetailModalContent({
 						</label>
 					</div>
 
-					<h2 className="text-xl font-black leading-snug text-base-content">
-						{card.title}
-					</h2>
+					{editingTitle ? (
+						<input
+							autoFocus
+							type="text"
+							value={titleValue}
+							onChange={(e) => setTitleValue(e.target.value)}
+							onBlur={handleTitleBlur}
+							onKeyDown={handleTitleKeyDown}
+							className="w-full bg-transparent text-xl font-black leading-snug text-base-content outline-none border-b-2 border-primary focus:border-primary"
+						/>
+					) : (
+						<h2
+							onClick={handleTitleClick}
+							className="cursor-text text-xl font-black leading-snug text-base-content hover:opacity-70 transition-opacity"
+							title="Click to edit title"
+						>
+							{card.title}
+						</h2>
+					)}
 				</div>
 
 				<button
