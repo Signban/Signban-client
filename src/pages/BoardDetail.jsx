@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo } from "react";
+import { toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router";
 import BoardCanvas from "../components/board/BoardCanvas";
 import BoardHeader from "../components/board/BoardHeader";
+import BoardService from "../services/BoardService";
 import BoardPageLoader from "../components/board/BoardPageLoader";
 import BoardSyncIndicator from "../components/board/BoardSyncIndicator";
 import AddBoardMemberModalContent from "../components/modals/AddBoardMemberModalContent";
@@ -93,6 +95,15 @@ export default function BoardDetailPage() {
 		});
 	}, [boardId, board?.lists?.length, modal, syncBoardFromResponse]);
 
+	const handleRemoveMember = useCallback(async (userId) => {
+		try {
+			await BoardService.removeMember(boardId, userId);
+			fetchBoardDetail({ showLoading: false });
+		} catch (err) {
+			toast.error(err.response?.data?.message || "Failed to remove member");
+		}
+	}, [boardId, fetchBoardDetail]);
+
 	const openAddMemberModal = useCallback(() => {
 		if (!boardId) return;
 
@@ -175,6 +186,7 @@ export default function BoardDetailPage() {
 				onBack={onBack}
 				onAddMember={openAddMemberModal}
 				onAddList={openAddListModal}
+				onRemoveMember={handleRemoveMember}
 			/>
 
 			<BoardCanvas
