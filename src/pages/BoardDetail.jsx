@@ -18,191 +18,194 @@ import useBoardDragAndDrop from "../hooks/useBoardDragAndDrop";
 import useBoardSocket from "../hooks/useBoardSocket";
 
 export default function BoardDetailPage() {
-	const modal = useModal();
-	const navigate = useNavigate();
-	const { id } = useParams();
-	const { currentUser } = useAuth();
+  const modal = useModal();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const { currentUser } = useAuth();
 
-	const boardId = id;
+  const boardId = id;
 
-	const {
-		board,
-		setBoard,
-		members,
-		loading,
-		softLoading,
-		startSoftLoading,
-		stopSoftLoading,
-		fetchBoardDetail,
-	} = useBoardDetail(boardId);
+  const {
+    board,
+    setBoard,
+    members,
+    loading,
+    softLoading,
+    startSoftLoading,
+    stopSoftLoading,
+    fetchBoardDetail,
+  } = useBoardDetail(boardId);
 
-	const lists = useMemo(() => board?.lists || [], [board]);
+  const lists = useMemo(() => board?.lists || [], [board]);
 
-	const { draggingCards, draggingLists } = useBoardSocket({
-		boardId,
-		setBoard,
-	});
+  const { draggingCards, draggingLists } = useBoardSocket({
+    boardId,
+    setBoard,
+  });
 
-	const {
-		sensors,
-		activeItem,
-		handleDragStart,
-		handleDragOver,
-		handleDragEnd,
-		handleDragCancel,
-	} = useBoardDragAndDrop({
-		boardId,
-		board,
-		lists,
-		currentUser,
-		setBoard,
-		startSoftLoading,
-		stopSoftLoading,
-		fetchBoardDetail,
-	});
+  const {
+    sensors,
+    activeItem,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
+    handleDragCancel,
+  } = useBoardDragAndDrop({
+    boardId,
+    board,
+    lists,
+    currentUser,
+    setBoard,
+    startSoftLoading,
+    stopSoftLoading,
+    fetchBoardDetail,
+  });
 
-	const onBack = useCallback(() => {
-		navigate("/dashboard");
-	}, [navigate]);
+  const onBack = useCallback(() => {
+    navigate("/dashboard");
+  }, [navigate]);
 
-	const syncBoardFromResponse = useCallback(
-		(response) => {
-			if (!response?.board) return;
-			setBoard(normalizeBoard(response.board));
-		},
-		[setBoard],
-	);
+  const syncBoardFromResponse = useCallback(
+    (response) => {
+      if (!response?.board) return;
+      setBoard(normalizeBoard(response.board));
+    },
+    [setBoard],
+  );
 
-	const openAddListModal = useCallback(() => {
-		if (!boardId) return;
+  const openAddListModal = useCallback(() => {
+    if (!boardId) return;
 
-		const position = (board?.lists?.length ?? 0) + 1;
+    const position = (board?.lists?.length ?? 0) + 1;
 
-		modal.open({
-			title: "Add List",
-			size: "md",
-			content: ({ close }) => (
-				<AddListModalContent
-					boardId={boardId}
-					position={position}
-					onClose={close}
-					onSuccess={(response) => {
-						syncBoardFromResponse(response);
-						close();
-					}}
-				/>
-			),
-		});
-	}, [boardId, board?.lists?.length, modal, syncBoardFromResponse]);
+    modal.open({
+      title: "Add List",
+      size: "md",
+      content: ({ close }) => (
+        <AddListModalContent
+          boardId={boardId}
+          position={position}
+          onClose={close}
+          onSuccess={(response) => {
+            syncBoardFromResponse(response);
+            close();
+          }}
+        />
+      ),
+    });
+  }, [boardId, board?.lists?.length, modal, syncBoardFromResponse]);
 
-	const handleRemoveMember = useCallback(async (userId) => {
-		try {
-			await BoardService.removeMember(boardId, userId);
-			fetchBoardDetail({ showLoading: false });
-		} catch (err) {
-			toast.error(err.response?.data?.message || "Failed to remove member");
-		}
-	}, [boardId, fetchBoardDetail]);
+  const handleRemoveMember = useCallback(
+    async (userId) => {
+      try {
+        await BoardService.removeMember(boardId, userId);
+        fetchBoardDetail({ showLoading: false });
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Failed to remove member");
+      }
+    },
+    [boardId, fetchBoardDetail],
+  );
 
-	const openAddMemberModal = useCallback(() => {
-		if (!boardId) return;
+  const openAddMemberModal = useCallback(() => {
+    if (!boardId) return;
 
-		modal.open({
-			title: "Add Member",
-			size: "md",
-			content: ({ close }) => (
-				<AddBoardMemberModalContent
-					boardId={boardId}
-					onClose={close}
-					onSuccess={(response) => {
-						syncBoardFromResponse(response);
-						close();
-					}}
-				/>
-			),
-		});
-	}, [boardId, modal, syncBoardFromResponse]);
+    modal.open({
+      title: "Add Member",
+      size: "md",
+      content: ({ close }) => (
+        <AddBoardMemberModalContent
+          boardId={boardId}
+          onClose={close}
+          onSuccess={(response) => {
+            syncBoardFromResponse(response);
+            close();
+          }}
+        />
+      ),
+    });
+  }, [boardId, modal, syncBoardFromResponse]);
 
-	const openCardDetailModal = useCallback(
-		(cardId) => {
-			if (!boardId || !cardId) return;
+  const openCardDetailModal = useCallback(
+    (cardId) => {
+      if (!boardId || !cardId) return;
 
-			modal.open({
-				title: "Card Detail",
-				size: "2xl",
-				content: ({ close }) => (
-					<CardDetailModalContent
-						boardId={boardId}
-						onClose={close}
-						cardId={cardId}
-						onCardUpdated={syncBoardFromResponse}
-					/>
-				),
-			});
-		},
-		[boardId, modal, syncBoardFromResponse],
-	);
+      modal.open({
+        title: "Card Detail",
+        size: "2xl",
+        content: ({ close }) => (
+          <CardDetailModalContent
+            boardId={boardId}
+            onClose={close}
+            cardId={cardId}
+            onCardUpdated={syncBoardFromResponse}
+          />
+        ),
+      });
+    },
+    [boardId, modal, syncBoardFromResponse],
+  );
 
-	const openAddCardModal = useCallback(
-		(list) => {
-			if (!boardId || !list?.id) return;
+  const openAddCardModal = useCallback(
+    (list) => {
+      if (!boardId || !list?.id) return;
 
-			modal.open({
-				title: "Add Card",
-				size: "md",
-				content: ({ close }) => (
-					<AddCardModalContent
-						boardId={boardId}
-						listId={list.id}
-						onClose={close}
-						onSuccess={(response) => {
-							syncBoardFromResponse(response);
-							close();
-						}}
-					/>
-				),
-			});
-		},
-		[boardId, modal, syncBoardFromResponse],
-	);
+      modal.open({
+        title: "Add Card",
+        size: "md",
+        content: ({ close }) => (
+          <AddCardModalContent
+            boardId={boardId}
+            listId={list.id}
+            onClose={close}
+            onSuccess={(response) => {
+              syncBoardFromResponse(response);
+              close();
+            }}
+          />
+        ),
+      });
+    },
+    [boardId, modal, syncBoardFromResponse],
+  );
 
-	useEffect(() => {
-		document.title = board?.name
-			? `${board.name} | Signban`
-			: "Board | Signban";
-	}, [board?.name]);
+  useEffect(() => {
+    document.title = board?.name
+      ? `${board.name} | Signban`
+      : "Board | Signban";
+  }, [board?.name]);
 
-	if (loading && !board) {
-		return <BoardPageLoader />;
-	}
+  if (loading && !board) {
+    return <BoardPageLoader />;
+  }
 
-	return (
-		<section className="flex h-[calc(100vh-4rem)] w-full flex-col overflow-hidden bg-base-200/50">
-			<BoardSyncIndicator visible={softLoading} />
+  return (
+    <section className="flex h-[calc(100vh-4rem)] w-full flex-col overflow-hidden bg-base-200/50">
+      <BoardSyncIndicator visible={softLoading} />
 
-			<BoardHeader
-				board={board}
-				members={members}
-				onBack={onBack}
-				onAddMember={openAddMemberModal}
-				onAddList={openAddListModal}
-				onRemoveMember={handleRemoveMember}
-			/>
+      <BoardHeader
+        board={board}
+        members={members}
+        onBack={onBack}
+        onAddMember={openAddMemberModal}
+        onAddList={openAddListModal}
+        onRemoveMember={handleRemoveMember}
+      />
 
-			<BoardCanvas
-				lists={lists}
-				sensors={sensors}
-				activeItem={activeItem}
-				draggingCards={draggingCards}
-				draggingLists={draggingLists}
-				onAddList={openAddListModal}
-				onAddCard={openAddCardModal}
-				onOpenCardDetail={openCardDetailModal}
-				onDragStart={handleDragStart}
-				onDragOver={handleDragOver}
-				onDragEnd={handleDragEnd}
-				onDragCancel={handleDragCancel}
-			/>
-		</section>
-	);
+      <BoardCanvas
+        lists={lists}
+        sensors={sensors}
+        activeItem={activeItem}
+        draggingCards={draggingCards}
+        draggingLists={draggingLists}
+        onAddList={openAddListModal}
+        onAddCard={openAddCardModal}
+        onOpenCardDetail={openCardDetailModal}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      />
+    </section>
+  );
 }
