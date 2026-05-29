@@ -63,6 +63,14 @@ export default function BoardDetailPage() {
 		navigate("/dashboard");
 	}, [navigate]);
 
+	const syncBoardFromResponse = useCallback(
+		(response) => {
+			if (!response?.board) return;
+			setBoard(normalizeBoard(response.board));
+		},
+		[setBoard],
+	);
+
 	const openAddListModal = useCallback(() => {
 		if (!boardId) return;
 
@@ -77,13 +85,13 @@ export default function BoardDetailPage() {
 					position={position}
 					onClose={close}
 					onSuccess={(response) => {
-						setBoard(normalizeBoard(response.board));
+						syncBoardFromResponse(response);
 						close();
 					}}
 				/>
 			),
 		});
-	}, [boardId, board?.lists?.length, modal, setBoard]);
+	}, [boardId, board?.lists?.length, modal, syncBoardFromResponse]);
 
 	const openAddMemberModal = useCallback(() => {
 		if (!boardId) return;
@@ -95,11 +103,14 @@ export default function BoardDetailPage() {
 				<AddBoardMemberModalContent
 					boardId={boardId}
 					onClose={close}
-					onSuccess={() => fetchBoardDetail({ showLoading: false })}
+					onSuccess={(response) => {
+						syncBoardFromResponse(response);
+						close();
+					}}
 				/>
 			),
 		});
-	}, [boardId, fetchBoardDetail, modal]);
+	}, [boardId, modal, syncBoardFromResponse]);
 
 	const openCardDetailModal = useCallback(
 		(cardId) => {
@@ -108,17 +119,17 @@ export default function BoardDetailPage() {
 			modal.open({
 				title: "Card Detail",
 				size: "2xl",
-				onClose: () => fetchBoardDetail({ showLoading: false }),
 				content: ({ close }) => (
 					<CardDetailModalContent
 						boardId={boardId}
 						onClose={close}
 						cardId={cardId}
+						onCardUpdated={syncBoardFromResponse}
 					/>
 				),
 			});
 		},
-		[boardId, fetchBoardDetail, modal],
+		[boardId, modal, syncBoardFromResponse],
 	);
 
 	const openAddCardModal = useCallback(
@@ -134,14 +145,14 @@ export default function BoardDetailPage() {
 						listId={list.id}
 						onClose={close}
 						onSuccess={(response) => {
-							setBoard(normalizeBoard(response.board));
+							syncBoardFromResponse(response);
 							close();
 						}}
 					/>
 				),
 			});
 		},
-		[boardId, modal, setBoard],
+		[boardId, modal, syncBoardFromResponse],
 	);
 
 	useEffect(() => {
