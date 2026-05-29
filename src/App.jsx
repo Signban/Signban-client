@@ -9,37 +9,38 @@ import BoardDetailPage from "./pages/BoardDetail";
 import RegisterPage from "./pages/RegisterPage";
 import SettingsPage from "./pages/SettingsPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import LandingPage from "./pages/LandingPage";
 
 function App() {
-	return (
-		<>
-			<Routes>
-				<Route element={<AuthLayout />}>
-					<Route path="/login" element={<LoginPage />} />
-					<Route path="/register" element={<RegisterPage />} />
-				</Route>
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
 
-				<Route element={<MainLayout />}>
-					<Route path="/" element={<Navigate to="/dashboard" replace />} />
-					<Route path="/dashboard" element={<BoardPage />} />
-					<Route path="/board/:id" element={<BoardDetailPage />} />
-					<Route path="/settings" element={<SettingsPage />} />
-				</Route>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+        </Route>
 
-				<Route path="/reset-password" element={<ResetPasswordPage />} />
-				<Route path="*" element={<NotFoundPage />} />
-			</Routes>
+        <Route element={<MainLayout />}>
+          <Route path="/dashboard" element={<BoardPage />} />
+          <Route path="/dashboard/:id" element={<BoardDetailPage />} />
+        </Route>
 
-			<ToastContainer
-				position="bottom-left"
-				autoClose={2000}
-				hideProgressBar={false}
-				newestOnTop
-				closeOnClick
-				pauseOnHover
-			/>
-		</>
-	);
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+
+      <ToastContainer
+        position="bottom-left"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+      />
+    </>
+  );
 }
 
 export default App;
