@@ -37,7 +37,7 @@ export default function AddBoardMemberModalContent({
 			const response = await BoardService.addMember(boardId, payload);
 
 			toast.success(response.message || "Member added successfully");
-			await onSuccess?.();
+			await onSuccess?.(response);
 			onClose?.();
 		} catch (error) {
 			console.log(error);
