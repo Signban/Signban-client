@@ -7,6 +7,7 @@ import BoardPage from "./pages/BoardPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import BoardDetailPage from "./pages/BoardDetail";
 import RegisterPage from "./pages/RegisterPage";
+import SettingsPage from "./pages/SettingsPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import LandingPage from "./pages/LandingPage";
 
@@ -22,7 +23,6 @@ function App() {
         </Route>
 
         <Route element={<MainLayout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<BoardPage />} />
           <Route path="/dashboard/:id" element={<BoardDetailPage />} />
         </Route>

@@ -58,34 +58,34 @@ export default function RegisterPage() {
 									Signban
 								</div>
 
-								<h1 className="mb-5 text-5xl font-bold leading-tight">
-									Realtime Kanban untuk kerja tim yang lebih rapi
-								</h1>
+                <h1 className="mb-5 text-5xl font-bold leading-tight">
+                  Realtime Kanban for better team collaboration
+                </h1>
 
-								<p className="text-lg leading-relaxed text-white/80">
-									Kelola board, list, card, checklist, komentar, dan aktivitas
-									tim secara realtime dalam satu workspace.
-								</p>
+                <p className="text-lg leading-relaxed text-white/80">
+                  Manage boards, lists, cards, checklists, comments, and team
+                  activity in real time — all in one workspace.
+                </p>
 
-								<div className="mt-8 grid grid-cols-1 gap-3 text-sm text-white/90">
-									<div className="flex items-center gap-3">
-										<span className="badge badge-success badge-sm"></span>
-										<span>Board collaboration realtime</span>
-									</div>
+                <div className="mt-8 grid grid-cols-1 gap-3 text-sm text-white/90">
+                  <div className="flex items-center gap-3">
+                    <span className="badge badge-success badge-sm"></span>
+                    <span>Real-time board collaboration</span>
+                  </div>
 
 									<div className="flex items-center gap-3">
 										<span className="badge badge-warning badge-sm"></span>
 										<span>Drag & drop workflow</span>
 									</div>
 
-									<div className="flex items-center gap-3">
-										<span className="badge badge-info badge-sm"></span>
-										<span>AI checklist dan priority suggestion</span>
-									</div>
-								</div>
-							</div>
-						</div>
-					</section>
+                  <div className="flex items-center gap-3">
+                    <span className="badge badge-info badge-sm"></span>
+                    <span>AI checklist and priority suggestions</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
 
 					<section className="flex items-center justify-center px-6 py-12">
 						<div className="w-full max-w-md">
@@ -99,10 +99,10 @@ export default function RegisterPage() {
 									Create Account
 								</h2>
 
-								<p className="mt-3 text-base-content/60">
-									Buat akun baru untuk mulai menggunakan Signban.
-								</p>
-							</div>
+                <p className="mt-3 text-base-content/60">
+                  Create a new account to get started with Signban.
+                </p>
+              </div>
 
 							<div className="card border border-base-300 bg-base-100 shadow-xl">
 								<div className="card-body gap-5">

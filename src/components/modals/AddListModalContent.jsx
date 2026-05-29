@@ -11,36 +11,29 @@ function getErrorMessage(error) {
 	);
 }
 
-export default function AddBoardMemberModalContent({
-	boardId,
-	onClose,
-	onSuccess,
-}) {
-	const [email, setEmail] = useState("");
+export default function AddListModalContent({ boardId, position, onClose, onSuccess }) {
+	const [name, setName] = useState("");
 	const [loading, setLoading] = useState(false);
 
-	const handleSubmit = async (event) => {
-		event.preventDefault();
+	const handleSubmit = async (e) => {
+		e.preventDefault();
 
-		const payload = {
-			email: email.trim(),
-		};
-
-		if (!payload.email) {
-			toast.error("Email is required");
+		if (!name.trim()) {
+			toast.error("List name is required");
 			return;
 		}
 
 		try {
 			setLoading(true);
 
-			const response = await BoardService.addMember(boardId, payload);
+			const response = await BoardService.createList(boardId, {
+				name: name.trim(),
+				position,
+			});
 
-			toast.success(response.message || "Member added successfully");
+			toast.success(response.message || "List created successfully");
 			await onSuccess?.(response);
-			onClose?.();
 		} catch (error) {
-			console.log(error);
 			toast.error(getErrorMessage(error));
 		} finally {
 			setLoading(false);
@@ -51,16 +44,18 @@ export default function AddBoardMemberModalContent({
 		<form onSubmit={handleSubmit} className="space-y-5">
 			<label className="form-control">
 				<div className="label">
-					<span className="label-text font-medium">Member Email</span>
+					<span className="label-text font-medium">
+						Name <span className="text-error">*</span>
+					</span>
 				</div>
-
 				<input
+					type="text"
 					disabled={loading}
-					type="email"
-					value={email}
-					onChange={(event) => setEmail(event.target.value)}
-					placeholder="member@signban.com"
+					value={name}
+					onChange={(e) => setName(e.target.value)}
+					placeholder="List name..."
 					className="input input-bordered w-full"
+					autoFocus
 				/>
 			</label>
 
@@ -74,11 +69,15 @@ export default function AddBoardMemberModalContent({
 					Cancel
 				</button>
 
-				<button type="submit" disabled={loading} className="btn btn-primary">
+				<button
+					type="submit"
+					disabled={!name.trim() || loading}
+					className="btn btn-primary"
+				>
 					{loading ? (
-						<span className="loading loading-spinner loading-sm"></span>
+						<span className="loading loading-spinner loading-sm" />
 					) : (
-						"Add Member"
+						"Add List"
 					)}
 				</button>
 			</div>

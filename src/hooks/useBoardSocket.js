@@ -4,6 +4,7 @@ import { normalizeBoard } from "../utils/boardNormalizer";
 
 export default function useBoardSocket({ boardId, setBoard }) {
 	const [draggingCards, setDraggingCards] = useState({});
+	const [draggingLists, setDraggingLists] = useState({});
 
 	useEffect(() => {
 		if (!boardId) return;
@@ -16,7 +17,6 @@ export default function useBoardSocket({ boardId, setBoard }) {
 
 		const syncBoardFromSocket = (payload) => {
 			if (!payload?.board) return;
-
 			setBoard(normalizeBoard(payload.board));
 		};
 
@@ -35,42 +35,70 @@ export default function useBoardSocket({ boardId, setBoard }) {
 			});
 		};
 
+		const handleListDragStart = ({ listId, userName }) => {
+			setDraggingLists((prev) => ({
+				...prev,
+				[listId]: { userName },
+			}));
+		};
+
+		const handleListDragEnd = ({ listId }) => {
+			setDraggingLists((prev) => {
+				const next = { ...prev };
+				delete next[listId];
+				return next;
+			});
+		};
+
 		const handleConnect = () => {
 			socket.emit("board:join", boardId);
 		};
 
-		socket.on("connect", handleConnect);
+		const boardSyncEvents = [
+			"board:updated",
+			"board:member-added",
+			"board:member-removed",
+			"list:created",
+			"list:updated",
+			"list:moved",
+			"list:deleted",
+			"card:created",
+			"card:updated",
+			"card:moved",
+			"card:deleted",
+			"card:assigned",
+			"card:unassigned",
+			"comment:created",
+			"checklist:created",
+			"checklist:updated",
+			"checklist:deleted",
+		];
 
-		socket.on("board:updated", syncBoardFromSocket);
-		socket.on("card:moved", syncBoardFromSocket);
-		socket.on("list:moved", syncBoardFromSocket);
-		socket.on("card:created", syncBoardFromSocket);
-		socket.on("list:created", syncBoardFromSocket);
-		socket.on("card:updated", syncBoardFromSocket);
-		socket.on("card:deleted", syncBoardFromSocket);
+		socket.on("connect", handleConnect);
+		boardSyncEvents.forEach((eventName) => {
+			socket.on(eventName, syncBoardFromSocket);
+		});
 
 		socket.on("card:drag-start", handleCardDragStart);
 		socket.on("card:drag-end", handleCardDragEnd);
+		socket.on("list:drag-start", handleListDragStart);
+		socket.on("list:drag-end", handleListDragEnd);
 
 		return () => {
 			socket.emit("board:leave", boardId);
-
 			socket.off("connect", handleConnect);
-
-			socket.off("board:updated", syncBoardFromSocket);
-			socket.off("card:moved", syncBoardFromSocket);
-			socket.off("list:moved", syncBoardFromSocket);
-			socket.off("card:created", syncBoardFromSocket);
-			socket.off("list:created", syncBoardFromSocket);
-			socket.off("card:updated", syncBoardFromSocket);
-			socket.off("card:deleted", syncBoardFromSocket);
-
+			boardSyncEvents.forEach((eventName) => {
+				socket.off(eventName, syncBoardFromSocket);
+			});
 			socket.off("card:drag-start", handleCardDragStart);
 			socket.off("card:drag-end", handleCardDragEnd);
+			socket.off("list:drag-start", handleListDragStart);
+			socket.off("list:drag-end", handleListDragEnd);
 		};
 	}, [boardId, setBoard]);
 
 	return {
 		draggingCards,
+		draggingLists,
 	};
 }

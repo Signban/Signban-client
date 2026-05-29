@@ -62,6 +62,24 @@ class BoardService {
 		return data;
 	}
 
+	static async updateCardCover(boardId, cardId, payload) {
+		const { data } = await api.patch(
+			`/boards/${boardId}/cards/${cardId}/cover`,
+			payload,
+			{
+				headers: {
+					"Content-Type": "multipart/form-data",
+				},
+			},
+		);
+		return data;
+	}
+
+	static async deleteCard(boardId, cardId) {
+		const { data } = await api.delete(`/boards/${boardId}/cards/${cardId}`);
+		return data;
+	}
+
 	static async addAssignee(boardId, cardId, userId) {
 		const { data } = await api.post(`/boards/${boardId}/cards/${cardId}/assignees`, { userId });
 		return data;
@@ -104,6 +122,13 @@ class BoardService {
 		const { data } = await api.patch(
 			`/boards/${boardId}/cards/${cardId}/move`,
 			payload,
+		);
+		return data;
+	}
+
+	static async generateChecklistWithAI(boardId, cardId) {
+		const { data } = await api.post(
+			`/boards/${boardId}/cards/${cardId}/checklists/ai-generate`,
 		);
 		return data;
 	}

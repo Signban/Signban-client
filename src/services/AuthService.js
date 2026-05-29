@@ -33,6 +33,13 @@ class AuthService {
     return data;
   }
 
+  static async updateAvatar(formData) {
+    const { data } = await api.patch("/account/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  }
+
   static async forgotPassword(payload) {
     const { data } = await api.post("/forgot-password", payload);
     return data;
